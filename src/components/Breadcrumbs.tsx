@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { siteConfig } from "@/lib/site";
+import { toSafeJsonLdString } from "@/lib/jsonLd";
 
 type Crumb = { label: string; href?: string };
 
@@ -20,7 +21,7 @@ export default function Breadcrumbs({ items }: { items: Crumb[] }) {
       <script
         type="application/ld+json"
          
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: toSafeJsonLdString(jsonLd) }}
       />
       <ol className="flex flex-wrap items-center gap-1.5">
         <li className="flex items-center gap-1.5">
