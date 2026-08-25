@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { services } from "@/lib/services";
 import { getSeo } from "@/lib/seo";
+import ServiceIcon from "@/components/illustrations/ServiceIcon";
 
 const seo = getSeo("/services");
+const iconKinds = ["hp", "lp", "system"] as const;
 
 export const metadata: Metadata = {
   title: seo.title,
@@ -22,13 +24,18 @@ export default function ServicesPage() {
       </p>
 
       <div className="mt-12 flex flex-col gap-8">
-        {services.map((service) => (
+        {services.map((service, i) => (
           <div
             key={service.slug}
             className="rounded-2xl border border-border p-8"
           >
-            <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-4">
-              <h2 className="text-xl font-bold">{service.name}</h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+                  <ServiceIcon kind={iconKinds[i] ?? "hp"} />
+                </span>
+                <h2 className="text-xl font-bold">{service.name}</h2>
+              </div>
               <div className="sm:text-right">
                 <p className="text-lg font-bold text-accent">
                   {service.priceFrom}

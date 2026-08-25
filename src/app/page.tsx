@@ -2,6 +2,8 @@ import Link from "next/link";
 import { siteConfig } from "@/lib/site";
 import { services } from "@/lib/services";
 import { works } from "@/lib/works";
+import HeroIllustration from "@/components/illustrations/HeroIllustration";
+import ServiceIcon from "@/components/illustrations/ServiceIcon";
 
 const strengths = [
   {
@@ -26,42 +28,105 @@ const strengths = [
   },
 ];
 
+const iconKinds = ["hp", "lp", "system"] as const;
+
+const processSteps = [
+  {
+    step: "01",
+    title: "お問い合わせ",
+    description:
+      "フォームより、現状のお悩みや「こんなことができないか」というご相談をお気軽にお送りください。",
+  },
+  {
+    step: "02",
+    title: "ヒアリング・お見積り",
+    description:
+      "内容や予算感を詳しくお伺いし、進め方と料金の目安を無料でご提示します。ここまでは費用がかかりません。",
+  },
+  {
+    step: "03",
+    title: "制作・開発",
+    description:
+      "ご要望に沿って設計・制作を進めます。完成まで丸投げにせず、進捗をこまめに共有しながら進めます。",
+  },
+  {
+    step: "04",
+    title: "納品・アフターサポート",
+    description:
+      "公開後も一定期間は修正に対応します。継続的な更新や保守運用が必要な場合も、別途ご相談いただけます。",
+  },
+];
+
+const faqs = [
+  {
+    q: "対応エリアはどこですか？地方でも依頼できますか？",
+    a: "リモート対応のため全国どこからでもご依頼いただけます。打ち合わせはオンライン(ビデオ通話・チャット・メール)が中心です。栃木県内であれば対面でのご相談も可能です。",
+  },
+  {
+    q: "相場より料金が安いようですが、品質は大丈夫ですか？",
+    a: "制作会社や仲介エージェントを介さず直接ご依頼いただく分の中間コストを料金に還元しているため、相場より抑えた価格でご提供できています。品質を落として安くしているわけではありませんので、ご安心ください。",
+  },
+  {
+    q: "何を依頼すればいいか、まだ決まっていません。相談だけでも大丈夫ですか？",
+    a: "もちろん問題ありません。現状の課題やご希望をお伺いした上で、HP・LP・システムのどれが適しているか、進め方も含めてご提案しますので、まずはお気軽にご相談ください。",
+  },
+  {
+    q: "支払いのタイミングや方法は？",
+    a: "案件の規模に応じてご相談しますが、基本的には着手時に一部、納品時に残額をお支払いいただく形が中心です。銀行振込に対応しています。分割のご相談も可能です。",
+  },
+  {
+    q: "納品後の修正や更新もお願いできますか？",
+    a: "納品後一定期間は軽微な修正に無料で対応します。継続的な更新代行や保守運用が必要な場合は、別途プランをご提案します。",
+  },
+  {
+    q: "副業とのことですが、連絡や納期は大丈夫ですか？",
+    a: "平日夜間・土日を中心とした稼働にはなりますが、お問い合わせへの返信は原則2営業日以内を心がけています。スケジュールは事前にすり合わせた上で進めますので、納期についてもご安心ください。",
+  },
+];
+
 export default function Home() {
   return (
     <div>
-      <section className="mx-auto max-w-5xl px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
-        <p className="text-sm font-semibold tracking-wide text-accent">
-          HP制作・LP制作・業務システム開発
-        </p>
-        <h1 className="mt-4 max-w-3xl text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
-          小さな会社・個人事業主の「困った」を、
-          <br className="hidden sm:block" />
-          ちょうどいい規模のWeb制作で解決します。
-        </h1>
-        <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-          {siteConfig.description}
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
-          <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
-            システム・Webアプリ開発 5万円〜
-          </span>
-          <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
-            相談・お見積り無料
-          </span>
-        </div>
-        <div className="mt-8 flex flex-wrap gap-4">
-          <Link
-            href="/contact"
-            className="rounded-full bg-accent px-7 py-3 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
-          >
-            無料で相談する
-          </Link>
-          <Link
-            href="/services"
-            className="rounded-full border border-border px-7 py-3 text-sm font-semibold transition-colors hover:border-accent hover:text-accent"
-          >
-            サービス・料金を見る
-          </Link>
+      <section className="relative overflow-hidden bg-[radial-gradient(circle,_#e4e7ec_1px,_transparent_1px)] bg-[length:24px_24px]">
+        <div className="mx-auto grid max-w-5xl items-center gap-10 px-6 pt-16 pb-16 sm:pt-24 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-6">
+          <div>
+            <p className="text-sm font-semibold tracking-wide text-accent">
+              HP制作・LP制作・業務システム/Webアプリ開発
+            </p>
+            <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
+              「ホームページが欲しい」を、
+              <br className="hidden sm:block" />
+              ちょうどいい規模と価格で形にします。
+            </h1>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+              {siteConfig.description}
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
+              <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
+                システム・Webアプリ開発 5万円〜
+              </span>
+              <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
+                相談・お見積り無料
+              </span>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Link
+                href="/contact"
+                className="rounded-full bg-accent px-7 py-3 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
+              >
+                無料で相談する
+              </Link>
+              <Link
+                href="/services"
+                className="rounded-full border border-border bg-background px-7 py-3 text-sm font-semibold transition-colors hover:border-accent hover:text-accent"
+              >
+                サービス・料金を見る
+              </Link>
+            </div>
+          </div>
+          <div className="lg:pl-4">
+            <HeroIllustration />
+          </div>
         </div>
       </section>
 
@@ -69,10 +134,13 @@ export default function Home() {
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <h2 className="text-xl font-bold sm:text-2xl">選ばれる理由</h2>
           <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {strengths.map((item) => (
+            {strengths.map((item, i) => (
               <div key={item.title}>
-                <h3 className="text-base font-semibold">{item.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-sm font-bold text-accent">
+                  {i + 1}
+                </span>
+                <h3 className="mt-3 text-base font-semibold">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
                   {item.description}
                 </p>
               </div>
@@ -92,12 +160,15 @@ export default function Home() {
           </Link>
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-3">
-          {services.map((service) => (
+          {services.map((service, i) => (
             <div
               key={service.slug}
               className="rounded-2xl border border-border p-6"
             >
-              <h3 className="text-base font-semibold">{service.name}</h3>
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">
+                <ServiceIcon kind={iconKinds[i] ?? "hp"} />
+              </span>
+              <h3 className="mt-4 text-base font-semibold">{service.name}</h3>
               <p className="mt-2 text-lg font-bold text-accent">
                 {service.priceFrom}
               </p>
@@ -111,29 +182,75 @@ export default function Home() {
 
       <section className="border-t border-border bg-surface">
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-          <div className="flex items-end justify-between gap-4">
-            <h2 className="text-xl font-bold sm:text-2xl">制作事例</h2>
-            <Link
-              href="/works"
-              className="text-sm font-semibold text-accent hover:underline"
-            >
-              すべて見る →
-            </Link>
-          </div>
-          <div className="mt-8 grid gap-6 sm:grid-cols-3">
-            {works.slice(0, 3).map((work) => (
-              <div
-                key={work.slug}
-                className="rounded-2xl border border-border bg-background p-6"
-              >
-                <p className="text-xs font-semibold text-accent">
-                  {work.category}
-                </p>
-                <h3 className="mt-2 text-base font-semibold">{work.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted">
-                  {work.summary}
+          <h2 className="text-xl font-bold sm:text-2xl">ご依頼の流れ</h2>
+          <p className="mt-2 text-sm text-muted">
+            お問い合わせからご相談・お見積りまでは無料です。
+          </p>
+          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {processSteps.map((item) => (
+              <div key={item.step} className="relative">
+                <span className="text-3xl font-bold text-accent/30">
+                  {item.step}
+                </span>
+                <h3 className="mt-2 text-base font-semibold">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  {item.description}
                 </p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+        <div className="flex items-end justify-between gap-4">
+          <h2 className="text-xl font-bold sm:text-2xl">制作事例</h2>
+          <Link
+            href="/works"
+            className="text-sm font-semibold text-accent hover:underline"
+          >
+            すべて見る →
+          </Link>
+        </div>
+        <div className="mt-8 grid gap-6 sm:grid-cols-3">
+          {works.slice(0, 3).map((work) => (
+            <div
+              key={work.slug}
+              className="rounded-2xl border border-border bg-background p-6"
+            >
+              <p className="text-xs font-semibold text-accent">
+                {work.category}
+              </p>
+              <h3 className="mt-2 text-base font-semibold">{work.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted">
+                {work.summary}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-surface">
+        <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+          <h2 className="text-xl font-bold sm:text-2xl">よくあるご質問</h2>
+          <div className="mt-8 flex flex-col gap-3">
+            {faqs.map((item) => (
+              <details
+                key={item.q}
+                className="group rounded-xl border border-border bg-background p-5 open:shadow-sm"
+              >
+                <summary className="cursor-pointer list-none text-sm font-semibold marker:content-none">
+                  <span className="flex items-start justify-between gap-4">
+                    <span>{item.q}</span>
+                    <span className="mt-0.5 shrink-0 text-accent transition-transform group-open:rotate-45">
+                      +
+                    </span>
+                  </span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-muted">
+                  {item.a}
+                </p>
+              </details>
             ))}
           </div>
         </div>
@@ -146,7 +263,7 @@ export default function Home() {
         <p className="mt-4 text-sm leading-relaxed text-muted sm:text-base">
           「何をどこまで頼めるのかわからない」という段階でも問題ありません。
           <br className="hidden sm:block" />
-          現状のお悩みをお聞かせいただければ、進め方をご提案します。
+          現状のお悩みをお聞かせいただければ、進め方と料金の目安をご提案します。
         </p>
         <div className="mt-8">
           <Link
