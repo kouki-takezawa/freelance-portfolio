@@ -13,6 +13,7 @@ import {
   type SeoMap,
   type WorkCase,
 } from "./types";
+import type { AnalyticsSummary } from "./analytics";
 
 export function esc(value: unknown): string {
   return String(value ?? "")
@@ -282,6 +283,7 @@ type NavKey =
   | "orders"
   | "revenue"
   | "inquiries"
+  | "analytics"
   | "works"
   | "services"
   | "blog"
@@ -298,6 +300,7 @@ const NAV_SECTIONS: {
       { key: "orders", href: "/orders", label: "受注管理" },
       { key: "revenue", href: "/revenue", label: "売上" },
       { key: "inquiries", href: "/inquiries", label: "お問い合わせ" },
+      { key: "analytics", href: "/analytics", label: "アクセス解析" },
     ],
   },
   {
@@ -366,6 +369,7 @@ export function overviewPage(data: {
   unpaidTotal: number;
   inProgressCount: number;
   overdueCount: number;
+  todayPageviews: number;
   message?: { type: "ok" | "error"; text: string };
 }): string {
   const content = `
@@ -394,6 +398,11 @@ export function overviewPage(data: {
         <div class="num">${data.unreadCount} <span style="font-size:14px;color:#5b6472">/ ${data.inquiriesCount}</span></div>
         <div class="label">未読のお問い合わせ</div>
         <a href="/inquiries">確認する →</a>
+      </div>
+      <div class="card">
+        <div class="num">${data.todayPageviews}</div>
+        <div class="label">今日のページビュー</div>
+        <a href="/analytics">詳しく見る →</a>
       </div>
     </div>
 
@@ -872,6 +881,63 @@ export function revenuePage(data: {
   return shell({
     title: "売上",
     active: "revenue",
+    unreadCount: data.unreadCount,
+    overdueCount: data.overdueCount,
+    content,
+  });
+}
+
+export function analyticsPage(data: {
+  summary: AnalyticsSummary;
+  unreadCount: number;
+  overdueCount: number;
+}): string {
+  const { summary } = data;
+
+  const body = !summary.available
+    ? `<div class="banner error">アクセス解析を取得できませんでした${summary.errorMessage ? `: ${esc(summary.errorMessage)}` : ""}。しばらくしてから再度お試しください。</div>`
+    : `
+      <div class="cards">
+        <div class="card">
+          <div class="num">${summary.today}</div>
+          <div class="label">今日のページビュー</div>
+        </div>
+        <div class="card">
+          <div class="num">${summary.last7Days}</div>
+          <div class="label">直近7日間</div>
+        </div>
+        <div class="card">
+          <div class="num">${summary.last30Days}</div>
+          <div class="label">直近30日間</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:32px">よく見られているページ(直近30日間)</h2>
+      <div class="table-wrap" style="margin-top:12px">
+        <table class="data">
+          <thead><tr><th>パス</th><th>ページビュー</th></tr></thead>
+          <tbody>
+            ${
+              summary.topPages.length === 0
+                ? `<tr><td colspan="2" class="hint" style="white-space:normal">まだデータがありません。サイトへのアクセスが増えると表示されます。</td></tr>`
+                : summary.topPages
+                    .map((p) => `<tr><td>${esc(p.path)}</td><td>${p.count}</td></tr>`)
+                    .join("")
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="hint" style="margin-top:16px">Cloudflare Web Analyticsのデータです(Cookie不使用)。反映まで数分かかる場合があります。</p>
+    `;
+
+  const content = `
+    <h1>アクセス解析</h1>
+    <h2>公開サイトへのアクセス状況です</h2>
+    ${body}
+  `;
+  return shell({
+    title: "アクセス解析",
+    active: "analytics",
     unreadCount: data.unreadCount,
     overdueCount: data.overdueCount,
     content,

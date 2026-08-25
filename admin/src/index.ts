@@ -2,6 +2,7 @@ import { Hono, type Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createSessionCookie, timingSafeEqual, verifySessionCookie } from "./auth";
 import { getJsonFile, putJsonFile } from "./github";
+import { getAnalyticsSummary, getTodayPageviews } from "./analytics";
 import {
   computeRevenue,
   createOrder,
@@ -11,6 +12,7 @@ import {
   putOrder,
 } from "./orders";
 import {
+  analyticsPage,
   blogPage,
   inquiriesPage,
   loginPage,
@@ -41,6 +43,7 @@ type Bindings = {
   ADMIN_PASSWORD: string;
   SESSION_SECRET: string;
   CONTENT_GITHUB_TOKEN: string;
+  CF_ANALYTICS_TOKEN: string;
   DATA: KVNamespace;
 };
 
@@ -106,14 +109,16 @@ app.use("/*", async (c, next) => {
 
 app.get("/", async (c) => {
   try {
-    const [works, services, blog, orders, unreadCount, inquiriesCount] = await Promise.all([
-      getJsonFile<WorkCase[]>(c.env.CONTENT_GITHUB_TOKEN, "content/works.json"),
-      getJsonFile<ServiceMenu[]>(c.env.CONTENT_GITHUB_TOKEN, "content/services.json"),
-      getJsonFile<BlogPost[]>(c.env.CONTENT_GITHUB_TOKEN, "content/blog.json"),
-      listOrders(c.env),
-      getUnreadCount(c.env),
-      c.env.DATA.list({ prefix: "inquiry:" }).then((r) => r.keys.length),
-    ]);
+    const [works, services, blog, orders, unreadCount, inquiriesCount, todayPageviews] =
+      await Promise.all([
+        getJsonFile<WorkCase[]>(c.env.CONTENT_GITHUB_TOKEN, "content/works.json"),
+        getJsonFile<ServiceMenu[]>(c.env.CONTENT_GITHUB_TOKEN, "content/services.json"),
+        getJsonFile<BlogPost[]>(c.env.CONTENT_GITHUB_TOKEN, "content/blog.json"),
+        listOrders(c.env),
+        getUnreadCount(c.env),
+        c.env.DATA.list({ prefix: "inquiry:" }).then((r) => r.keys.length),
+        getTodayPageviews(c.env.CF_ANALYTICS_TOKEN),
+      ]);
     const revenue = computeRevenue(orders);
     return c.html(
       overviewPage({
@@ -126,6 +131,7 @@ app.get("/", async (c) => {
         unpaidTotal: revenue.unpaidTotal,
         inProgressCount: revenue.inProgressCount,
         overdueCount: revenue.overdueCount,
+        todayPageviews,
       })
     );
   } catch (err) {
@@ -140,6 +146,7 @@ app.get("/", async (c) => {
         unpaidTotal: 0,
         inProgressCount: 0,
         overdueCount: 0,
+        todayPageviews: 0,
         message: { type: "error", text: (err as Error).message },
       }),
       500
@@ -394,6 +401,18 @@ app.get("/revenue", async (c) => {
       pipelineTotal: revenue.pipelineTotal,
       monthly: revenue.monthly,
     })
+  );
+});
+
+app.get("/analytics", async (c) => {
+  const [summary, orders, unreadCount] = await Promise.all([
+    getAnalyticsSummary(c.env.CF_ANALYTICS_TOKEN),
+    listOrders(c.env),
+    getUnreadCount(c.env),
+  ]);
+  const revenue = computeRevenue(orders);
+  return c.html(
+    analyticsPage({ summary, unreadCount, overdueCount: revenue.overdueCount })
   );
 });
 
