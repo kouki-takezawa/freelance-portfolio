@@ -44,8 +44,55 @@ type Bindings = {
   SESSION_SECRET: string;
   CONTENT_GITHUB_TOKEN: string;
   CF_ANALYTICS_TOKEN: string;
+  RESEND_API_KEY?: string;
   DATA: KVNamespace;
 };
+
+// Resendのサンドボックス送信元(独自ドメイン未検証のため)
+const NOTIFY_FROM = "ヨリソイワークス <onboarding@resend.dev>";
+const OWNER_EMAIL = "takechin001031@icloud.com";
+
+async function sendReplyEmail(
+  env: Bindings,
+  inquiry: Inquiry,
+  message: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!env.RESEND_API_KEY) {
+    return { ok: false, error: "RESEND_API_KEYが設定されていないため送信できません。" };
+  }
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: NOTIFY_FROM,
+        to: inquiry.email,
+        reply_to: OWNER_EMAIL,
+        subject: `Re: お問い合わせありがとうございます(${inquiry.inquiryType})`,
+        text: [
+          `${inquiry.name} 様`,
+          "",
+          message,
+          "",
+          "---",
+          "このメールに直接返信いただくことでも、担当者に届きます。",
+        ].join("\n"),
+      }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text();
+      return { ok: false, error: `Resend API error (${res.status}): ${detail}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
+  }
+}
 
 const COOKIE_NAME = "admin_session";
 
@@ -536,14 +583,58 @@ app.post("/inquiries/:key/delete", async (c) => {
   return c.redirect("/inquiries");
 });
 
+app.post("/inquiries/:key/reply", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  const body = await c.req.parseBody();
+  const message = String(body.message ?? "").trim();
+
+  const inquiries = await listInquiries(c.env);
+  const unreadCount = inquiries.filter((i) => !i.read).length;
+
+  const raw = await c.env.DATA.get(key);
+  if (!raw || !message) {
+    return c.html(inquiriesPage({ inquiries, unreadCount }));
+  }
+
+  const inquiry = { ...(JSON.parse(raw) as Inquiry), key };
+  const result = await sendReplyEmail(c.env, inquiry, message);
+
+  if (!result.ok) {
+    return c.html(
+      inquiriesPage({
+        inquiries,
+        unreadCount,
+        message: { type: "error", text: `返信の送信に失敗しました: ${result.error}` },
+      }),
+      500
+    );
+  }
+
+  const updated: Inquiry = {
+    ...inquiry,
+    read: true,
+    replies: [...(inquiry.replies ?? []), { message, sentAt: Date.now() }],
+  };
+  await c.env.DATA.put(key, JSON.stringify(updated), { metadata: { read: true } });
+
+  const refreshed = await listInquiries(c.env);
+  return c.html(
+    inquiriesPage({
+      inquiries: refreshed,
+      unreadCount: refreshed.filter((i) => !i.read).length,
+      message: { type: "ok", text: "返信を送信しました。" },
+    })
+  );
+});
+
 async function listInquiries(env: Bindings): Promise<Inquiry[]> {
   const { keys } = await env.DATA.list({ prefix: "inquiry:" });
   const values = await Promise.all(
     keys.map(async (k) => {
       const raw = await env.DATA.get(k.name);
       if (!raw) return null;
-      const parsed = JSON.parse(raw) as Omit<Inquiry, "key">;
-      return { ...parsed, key: k.name } as Inquiry;
+      const parsed = JSON.parse(raw) as Partial<Omit<Inquiry, "key">>;
+      return { ...parsed, replies: parsed.replies ?? [], key: k.name } as Inquiry;
     })
   );
   return values

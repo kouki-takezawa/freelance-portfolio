@@ -1,6 +1,59 @@
+import { siteConfig } from "../src/lib/site";
+
 export interface Env {
   ASSETS: Fetcher;
   DATA: KVNamespace;
+  RESEND_API_KEY?: string;
+}
+
+// Resendのサンドボックス送信元(独自ドメイン未検証のため)
+const NOTIFY_FROM = `${siteConfig.siteNameShort} <onboarding@resend.dev>`;
+
+type NotifyInquiry = {
+  name: string;
+  email: string;
+  inquiryType: string;
+  budget: string;
+  message: string;
+};
+
+async function sendNotificationEmail(env: Env, inquiry: NotifyInquiry): Promise<void> {
+  if (!env.RESEND_API_KEY) return;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: NOTIFY_FROM,
+        to: siteConfig.email,
+        reply_to: inquiry.email,
+        subject: `【お問い合わせ】${inquiry.inquiryType} - ${inquiry.name}様`,
+        text: [
+          "サイトから新しいお問い合わせがありました。",
+          "",
+          `お名前: ${inquiry.name}`,
+          `メールアドレス: ${inquiry.email}`,
+          `種別: ${inquiry.inquiryType}`,
+          `ご予算感: ${inquiry.budget || "未指定"}`,
+          "",
+          "お問い合わせ内容:",
+          inquiry.message,
+          "",
+          "管理画面から返信できます。",
+        ].join("\n"),
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("Resend API error", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("Failed to send notification email", err);
+  }
 }
 
 const REQUIRED_FIELDS = ["name", "email", "inquiryType", "message"] as const;
@@ -61,7 +114,7 @@ async function isRateLimited(env: Env, ip: string): Promise<boolean> {
   return false;
 }
 
-async function handleContact(request: Request, env: Env): Promise<Response> {
+async function handleContact(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
   if (await isRateLimited(env, ip)) {
     return Response.json({ error: "rate_limited" }, { status: 429 });
@@ -100,30 +153,37 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
   const receivedAt = Date.now();
   const key = `inquiry:${receivedAt}:${id}`;
 
+  const inquiry: NotifyInquiry = {
+    name: data.name as string,
+    email,
+    inquiryType: data.inquiryType as string,
+    budget,
+    message: data.message as string,
+  };
+
   await env.DATA.put(
     key,
     JSON.stringify({
       id,
-      name: data.name,
-      email,
-      inquiryType: data.inquiryType,
-      budget,
-      message: data.message,
+      ...inquiry,
       receivedAt,
       read: false,
+      replies: [],
     }),
     { metadata: { read: false } }
   );
+
+  ctx.waitUntil(sendNotificationEmail(env, inquiry));
 
   return Response.json({ ok: true });
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/contact" && request.method === "POST") {
-      return withSecurityHeaders(await handleContact(request, env));
+      return withSecurityHeaders(await handleContact(request, env, ctx));
     }
 
     return withSecurityHeaders(await env.ASSETS.fetch(request));
