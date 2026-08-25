@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# freelance-hp
 
-## Getting Started
+個人事業主(HP/LP/システム開発)向け集客サイト。Next.js (App Router, 静的エクスポート) + Tailwind CSS製。
 
-First, run the development server:
+## 開発
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev       # http://localhost:3000
+npm run build     # 静的サイトを out/ に出力
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 未確定・要対応のTODO
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `src/lib/site.ts`: 屋号が決まったら `siteName` / `siteNameShort` を差し替え。問い合わせ受信用メールアドレス(`email`)も設定
+- `functions/api/contact.js`: 現状はログ出力のみの仮実装。送信先メールが決まったらResend等のメールAPI連携を実装
+- `src/lib/works.ts`: 実績が公開できるようになったら `isSample: false` の実案件を追加
+- `src/lib/services.ts`: 受注実績が増えたら料金目安を実態に合わせて見直し
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## デプロイ (Cloudflare)
 
-## Learn More
+このリポジトリは `wrangler.jsonc` で静的アセットの出力先(`out/`)を宣言しており、Cloudflareの「Workers(静的アセット)」でのGit連携デプロイを想定しています。
 
-To learn more about Next.js, take a look at the following resources:
+1. https://dash.cloudflare.com/ にログイン(未登録なら無料アカウント作成)
+2. 「Workers & Pages」→「Create」→「Import a repository」(または「Connect to Git」)
+3. このGitHubリポジトリ(`kouki-takezawa/freelance-hp`)を選択
+4. ビルド設定(プロジェクト作成後でも Settings → Build から変更可能):
+   - Build command: `npm run build`
+   - Deploy command: `npx wrangler deploy` (デフォルトのままでOK。`wrangler.jsonc`の`assets.directory`が`out/`を参照する)
+5. 設定を保存すると、`main`ブランチへのpushのたびに自動でビルド・デプロイされる
+6. 公開URLは `https://<プロジェクト名>.<サブドメイン>.workers.dev` の形式
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**すでに設定なしでデプロイしてしまった場合**: プロジェクト画面の「Settings」→「Build」からBuild commandを`npm run build`に設定し直し、「Deployments」(または「Builds」)一覧から最新コミットで再デプロイ(Retry / Create deployment)してください。`wrangler.jsonc`をpushした後に再デプロイすれば、出力先ディレクトリの設定も反映されます。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+独自ドメインを取得したら、プロジェクトの「Custom domains」から接続できます。

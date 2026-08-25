@@ -1,7 +1,7 @@
-// TODO: 屋号・氏名が決まり次第、siteName / siteNameEn を差し替えてください（現在は仮の値です）
+// TODO: 屋号が決まったら siteName / siteNameShort を屋号に差し替えてください（現在はgit設定から取得した氏名を仮表示しています）
 export const siteConfig = {
-  siteName: "Kouki Takezawa",
-  siteNameShort: "K. Takezawa",
+  siteName: "竹澤光輝",
+  siteNameShort: "竹澤光輝",
   tagline: "小さな会社・個人事業主のためのHP・LP・業務システム開発",
   description:
     "HP制作、LP制作、業務効率化システムの開発を行っています。栃木県を拠点にリモート対応、まずはお気軽にご相談ください。",
