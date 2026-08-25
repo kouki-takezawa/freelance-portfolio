@@ -1,0 +1,40 @@
+export type WorkCase = {
+  slug: string;
+  title: string;
+  category: string;
+  summary: string;
+  points: string[];
+  // 実績が公開できる案件になったら true にし、URL / 画像などを追加してください
+  isSample: boolean;
+};
+
+// TODO: 実案件の実績が増えたら、この配列に isSample: false の項目として追加してください
+export const works: WorkCase[] = [
+  {
+    slug: "restaurant-hp",
+    title: "飲食店向け コーポレートサイト",
+    category: "HP制作",
+    summary:
+      "メニュー・アクセス・予約導線を備えた飲食店向けHPの制作例です。Googleマップ連携やMEO対策を意識した構成にも対応できます。",
+    points: ["スマホファーストのレスポンシブ対応", "Googleビジネスプロフィール連携", "更新しやすいシンプルな構成"],
+    isSample: true,
+  },
+  {
+    slug: "service-lp",
+    title: "サービス紹介ランディングページ",
+    category: "LP制作",
+    summary:
+      "新サービスや商品の申込・問い合わせ獲得に特化した1ページ構成のLP制作例です。訴求内容に合わせたセクション設計を行います。",
+    points: ["問い合わせ・申込導線の最適化", "表示速度を意識した軽量設計", "効果測定用のアナリティクス導入"],
+    isSample: true,
+  },
+  {
+    slug: "reservation-system",
+    title: "予約・受付管理システム",
+    category: "システム開発",
+    summary:
+      "店舗・施設向けの予約受付から管理までを行う業務システムの構築例です。既存のExcel/紙運用をWeb化するご相談も対応できます。",
+    points: ["予約枠の管理・自動通知", "管理画面での一覧・編集機能", "将来の機能追加を見据えた設計"],
+    isSample: true,
+  },
+];

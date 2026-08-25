@@ -1,0 +1,33 @@
+import Link from "next/link";
+import { siteConfig } from "@/lib/site";
+
+export default function Header() {
+  return (
+    <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4">
+        <Link href="/" className="text-base font-bold tracking-tight sm:text-lg">
+          {siteConfig.siteNameShort}
+        </Link>
+        <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+          {siteConfig.navLinks
+            .filter((link) => link.href !== "/contact")
+            .map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-foreground/80 transition-colors hover:text-accent"
+              >
+                {link.label}
+              </Link>
+            ))}
+          <Link
+            href="/contact"
+            className="rounded-full bg-accent px-4 py-1.5 text-accent-foreground transition-opacity hover:opacity-90"
+          >
+            相談する
+          </Link>
+        </nav>
+      </div>
+    </header>
+  );
+}
