@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { works } from "@/lib/works";
+import { getSeo } from "@/lib/seo";
+
+const seo = getSeo("/works");
 
 export const metadata: Metadata = {
-  title: "制作事例",
-  description: "HP制作・LP制作・システム開発の対応イメージをご紹介します。",
+  title: seo.title,
+  description: seo.description,
 };
 
 export default function WorksPage() {

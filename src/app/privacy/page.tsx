@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
+import { getSeo } from "@/lib/seo";
+
+const seo = getSeo("/privacy");
 
 export const metadata: Metadata = {
-  title: "プライバシーポリシー",
-  description: "当サイトにおける個人情報の取り扱いについて",
+  title: seo.title,
+  description: seo.description,
 };
 
 export default function PrivacyPage() {

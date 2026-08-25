@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { services } from "@/lib/services";
+import { getSeo } from "@/lib/seo";
+
+const seo = getSeo("/services");
 
 export const metadata: Metadata = {
-  title: "サービス・料金",
-  description:
-    "HP制作・LP制作・業務システム開発の料金目安と対応範囲をご紹介します。",
+  title: seo.title,
+  description: seo.description,
 };
 
 export default function ServicesPage() {

@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { siteConfig } from "@/lib/site";
+import { getSeo } from "@/lib/seo";
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
@@ -11,15 +12,18 @@ const notoSansJP = Noto_Sans_JP({
   weight: ["400", "500", "700", "900"],
 });
 
+const homeSeo = getSeo("/");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.siteUrl),
   title: {
-    default: `${siteConfig.siteName} | ${siteConfig.tagline}`,
+    default: homeSeo.title,
     template: `%s | ${siteConfig.siteName}`,
   },
-  description: siteConfig.description,
+  description: homeSeo.description,
   openGraph: {
-    title: siteConfig.siteName,
-    description: siteConfig.description,
+    title: homeSeo.title,
+    description: homeSeo.description,
     type: "website",
     locale: "ja_JP",
   },

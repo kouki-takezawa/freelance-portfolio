@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
+import { getSeo } from "@/lib/seo";
+
+const seo = getSeo("/contact");
 
 export const metadata: Metadata = {
-  title: "お問い合わせ",
-  description: "HP制作・LP制作・システム開発のご相談はこちらから。",
+  title: seo.title,
+  description: seo.description,
 };
 
 export default function ContactPage() {

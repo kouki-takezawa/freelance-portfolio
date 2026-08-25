@@ -1,4 +1,6 @@
 export const siteConfig = {
+  // TODO: 独自ドメインを取得したら siteUrl を差し替えてください
+  siteUrl: "https://freelance-hp.takechin001031.workers.dev",
   siteName: "ヨリソイワークス",
   siteNameShort: "ヨリソイワークス",
   tagline: "小さな会社・個人事業主のためのHP・LP・業務システム開発",
