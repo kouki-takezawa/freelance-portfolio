@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import MobileStickyCta from "@/components/MobileStickyCta";
 import { siteConfig } from "@/lib/site";
 import { getSeo } from "@/lib/seo";
+import { toSafeJsonLdString } from "@/lib/jsonLd";
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
@@ -53,7 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script
           type="application/ld+json"
            
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: toSafeJsonLdString(organizationJsonLd) }}
         />
         <Header />
         <main className="flex-1">{children}</main>

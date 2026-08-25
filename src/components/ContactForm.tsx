@@ -128,6 +128,16 @@ export default function ContactForm() {
         </label>
       </div>
 
+      {/* ボット対策のハニーポット: 人間には見えず、入力があれば送信を無視する */}
+      <input
+        type="text"
+        name="company"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute left-[-9999px] h-0 w-0 opacity-0"
+      />
+
       <label className="flex flex-col gap-2 text-sm font-medium">
         お問い合わせ内容
         <textarea
