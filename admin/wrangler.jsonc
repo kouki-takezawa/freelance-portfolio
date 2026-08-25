@@ -8,5 +8,10 @@
       "binding": "DATA",
       "id": "e37dfd650b9a4271b2bdb5b33e364b56"
     }
-  ]
+  ],
+  // 投稿カレンダーのカード画像生成に使うフォントなど、JSバンドルに含めたくない静的ファイルの配信用
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  }
 }
