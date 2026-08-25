@@ -5,7 +5,7 @@ import { works } from "@/lib/works";
 import HeroIllustration from "@/components/illustrations/HeroIllustration";
 import ServiceIcon from "@/components/illustrations/ServiceIcon";
 import { blogPosts } from "@/lib/blog";
-import { categoryVisual } from "@/lib/categoryVisual";
+import WorksCarousel from "@/components/WorksCarousel";
 
 const jumpLinks = [
   { href: "#strengths", label: "選ばれる理由" },
@@ -276,36 +276,7 @@ export default function Home() {
       </section>
 
       <section id="works" className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-        <div className="flex items-end justify-between gap-4">
-          <h2 className="text-xl font-bold sm:text-2xl">制作事例</h2>
-          <Link
-            href="/works"
-            className="text-sm font-semibold text-accent hover:underline"
-          >
-            すべて見る →
-          </Link>
-        </div>
-        <div className="mt-8 grid gap-6 sm:grid-cols-3">
-          {works.slice(0, 3).map((work) => {
-            const visual = categoryVisual(work.category);
-            return (
-              <div
-                key={work.slug}
-                className={`overflow-hidden rounded-2xl border border-t-4 border-border bg-background ${visual.border}`}
-              >
-                <div className="p-6">
-                  <p className="text-xs font-semibold text-accent">
-                    {work.category}
-                  </p>
-                  <h3 className="mt-2 text-base font-semibold">{work.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-muted">
-                    {work.summary}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <WorksCarousel works={works} />
       </section>
 
       {blogPosts.length > 0 && (
