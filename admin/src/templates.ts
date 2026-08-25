@@ -305,7 +305,7 @@ export function loginPage(errorMessage?: string): string {
         <label for="email">メールアドレス</label>
         <input type="text" id="email" name="email" required autocomplete="username" />
         <label for="password">パスワード</label>
-        <input type="text" id="password" name="password" required autocomplete="current-password" style="-webkit-text-security:disc;" />
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
         <button class="primary" type="submit">ログイン</button>
       </form>
     </div>
