@@ -163,6 +163,13 @@ const baseStyle = `
   .inquiry-card.unread { border-left: 4px solid #e05252; }
   .inquiry-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #5b6472; margin-bottom: 8px; }
   .inquiry-message { white-space: pre-wrap; font-size: 14px; margin: 10px 0; }
+  .inquiry-replies { margin: 10px 0; display: flex; flex-direction: column; gap: 8px; }
+  .inquiry-reply { background: #f0f5ff; border-radius: 8px; padding: 10px 12px; }
+  .inquiry-reply-meta { font-size: 11px; color: #5b6472; margin-bottom: 4px; }
+  .inquiry-reply-message { white-space: pre-wrap; font-size: 13px; }
+  .inquiry-reply-form { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+  .inquiry-reply-form textarea { min-height: 60px; }
+  .inquiry-reply-form button { align-self: flex-start; }
   .inquiry-actions { display: flex; gap: 8px; }
   .table-wrap { overflow-x: auto; border: 1px solid #e4e7ec; border-radius: 12px; background: #fff; }
   table.data { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
@@ -684,6 +691,26 @@ export function inquiriesPage(data: {
           </div>
           <div><strong>${esc(inq.name)}</strong> &lt;${esc(inq.email)}&gt;</div>
           <div class="inquiry-message">${esc(inq.message)}</div>
+          ${
+            inq.replies && inq.replies.length > 0
+              ? `<div class="inquiry-replies">
+                  ${inq.replies
+                    .map(
+                      (r) => `
+                    <div class="inquiry-reply">
+                      <div class="inquiry-reply-meta">${formatDate(r.sentAt)} に返信済み</div>
+                      <div class="inquiry-reply-message">${esc(r.message)}</div>
+                    </div>
+                  `
+                    )
+                    .join("")}
+                </div>`
+              : ""
+          }
+          <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/reply" class="inquiry-reply-form">
+            <textarea name="message" rows="3" placeholder="返信内容を入力してください" required></textarea>
+            <button class="small" type="submit">返信を送信</button>
+          </form>
           <div class="inquiry-actions">
             <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/toggle-read">
               <button class="small" type="submit">${inq.read ? "未読にする" : "既読にする"}</button>

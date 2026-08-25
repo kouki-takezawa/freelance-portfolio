@@ -61,6 +61,11 @@ export type Order = {
   createdAt: number;
 };
 
+export type InquiryReply = {
+  message: string;
+  sentAt: number;
+};
+
 export type Inquiry = {
   key: string;
   id: string;
@@ -71,6 +76,7 @@ export type Inquiry = {
   message: string;
   receivedAt: number;
   read: boolean;
+  replies: InquiryReply[];
 };
 
 export const SPARE_WORKS_ROWS = 2;
