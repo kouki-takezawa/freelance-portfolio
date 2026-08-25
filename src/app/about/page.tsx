@@ -10,13 +10,15 @@ export const metadata: Metadata = {
   description: seo.description,
 };
 
-const skills = [
+const webSkills = [
   "Next.js / React",
   "TypeScript",
   "Tailwind CSS",
   "Cloudflare Workers",
-  "業務システム・Webアプリ設計",
+  "Vercel",
 ];
+
+const systemSkills = ["VBA", "Microsoft Power Platform", "業務システム・Webアプリ設計"];
 
 const values = [
   {
@@ -62,8 +64,10 @@ export default function AboutPage() {
       </p>
 
       <h2 className="mt-12 text-lg font-bold">対応技術</h2>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {skills.map((skill) => (
+
+      <p className="mt-4 text-sm font-semibold text-foreground/80">Web制作・開発</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {webSkills.map((skill) => (
           <span
             key={skill}
             className="rounded-full border border-border bg-surface px-4 py-1.5 text-sm text-foreground/80"
@@ -73,8 +77,22 @@ export default function AboutPage() {
         ))}
       </div>
       <p className="mt-3 text-xs text-muted">
-        このサイト自体も上記の技術で構築・運用しています。
+        このサイト自体もNext.js・TypeScript・Tailwind CSS・Cloudflare Workersで構築・運用しています。
       </p>
+
+      <p className="mt-6 text-sm font-semibold text-foreground/80">
+        業務効率化・システム開発
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {systemSkills.map((skill) => (
+          <span
+            key={skill}
+            className="rounded-full border border-border bg-surface px-4 py-1.5 text-sm text-foreground/80"
+          >
+            {skill}
+          </span>
+        ))}
+      </div>
 
       <h2 className="mt-12 text-lg font-bold">大切にしていること</h2>
       <div className="mt-6 grid gap-6 sm:grid-cols-3">
