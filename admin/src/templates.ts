@@ -1,10 +1,14 @@
 import {
+  ORDER_SERVICE_TYPES,
+  ORDER_STATUSES,
+  PAYMENT_STATUSES,
   SEO_PAGES,
   SPARE_BLOG_ROWS,
   SPARE_SERVICES_ROWS,
   SPARE_WORKS_ROWS,
   type BlogPost,
   type Inquiry,
+  type Order,
   type ServiceMenu,
   type SeoMap,
   type WorkCase,
@@ -46,7 +50,15 @@ const baseStyle = `
     padding: 20px 0;
   }
   aside .brand { padding: 0 20px 20px; font-weight: 700; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.15); }
-  aside nav { flex: 1; padding-top: 12px; }
+  aside nav { flex: 1; padding-top: 8px; }
+  aside .nav-section-label {
+    padding: 14px 20px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+  }
   aside nav a {
     display: flex;
     align-items: center;
@@ -93,15 +105,17 @@ const baseStyle = `
   }
   legend { font-size: 12px; color: #5b6472; padding: 0 6px; }
   label { display: block; font-size: 13px; font-weight: 600; margin-top: 10px; margin-bottom: 4px; }
-  input[type="text"], textarea {
+  input[type="text"], textarea, select {
     width: 100%;
     padding: 8px 10px;
     border: 1px solid #e4e7ec;
     border-radius: 8px;
     font-size: 16px;
     font-family: inherit;
+    background: #fff;
   }
   textarea { min-height: 70px; resize: vertical; }
+  .field-row { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
   .checkbox-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; }
   .checkbox-row input { width: auto; }
   .save-bar { margin-top: 20px; }
@@ -149,6 +163,32 @@ const baseStyle = `
   .inquiry-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #5b6472; margin-bottom: 8px; }
   .inquiry-message { white-space: pre-wrap; font-size: 14px; margin: 10px 0; }
   .inquiry-actions { display: flex; gap: 8px; }
+  .table-wrap { overflow-x: auto; border: 1px solid #e4e7ec; border-radius: 12px; background: #fff; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+  table.data th, table.data td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e4e7ec; }
+  table.data th { background: #f8f9fb; color: #5b6472; font-weight: 600; font-size: 12px; }
+  table.data tbody tr:last-child td { border-bottom: none; }
+  table.data tbody tr:hover { background: #f8f9fb; }
+  table.data td.actions { display: flex; gap: 6px; }
+  table.data td.actions form { display: inline; }
+  .status-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .status-見積もり中 { background: #eef1f5; color: #5b6472; }
+  .status-進行中 { background: #e4edf9; color: #1e3a5f; }
+  .status-納品済み { background: #e6f4ea; color: #1e7a34; }
+  .status-キャンセル { background: #fdecea; color: #b3261e; text-decoration: line-through; }
+  .status-未入金 { background: #fdf3e0; color: #a3660a; }
+  .status-入金済み { background: #e6f4ea; color: #1e7a34; }
+  .overdue { color: #b3261e; font-weight: 700; }
+  .revenue-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 24px 0; }
+  .revenue-cards .card .num { font-size: 24px; }
+  .add-bar { margin-top: 16px; margin-bottom: 20px; }
   .login-box {
     max-width: 360px;
     margin: 80px auto;
@@ -188,6 +228,7 @@ const baseStyle = `
       gap: 4px;
     }
     aside nav a { padding: 8px 12px; white-space: nowrap; }
+    aside .nav-section-label { display: none; }
     aside .footer {
       border-top: none;
       margin-top: 0;
@@ -236,29 +277,58 @@ export function loginPage(errorMessage?: string): string {
   return htmlShell("ログイン", body);
 }
 
-type NavKey = "overview" | "works" | "services" | "blog" | "seo" | "inquiries";
+type NavKey =
+  | "overview"
+  | "orders"
+  | "revenue"
+  | "inquiries"
+  | "works"
+  | "services"
+  | "blog"
+  | "seo";
 
-const NAV_ITEMS: { key: NavKey; href: string; label: string }[] = [
-  { key: "overview", href: "/", label: "ダッシュボード" },
-  { key: "works", href: "/works", label: "実績" },
-  { key: "services", href: "/services", label: "料金" },
-  { key: "blog", href: "/blog", label: "お知らせ" },
-  { key: "seo", href: "/seo", label: "SEO" },
-  { key: "inquiries", href: "/inquiries", label: "お問い合わせ" },
+const NAV_SECTIONS: {
+  label: string;
+  items: { key: NavKey; href: string; label: string }[];
+}[] = [
+  {
+    label: "業務管理",
+    items: [
+      { key: "overview", href: "/", label: "ダッシュボード" },
+      { key: "orders", href: "/orders", label: "受注管理" },
+      { key: "revenue", href: "/revenue", label: "売上" },
+      { key: "inquiries", href: "/inquiries", label: "お問い合わせ" },
+    ],
+  },
+  {
+    label: "サイトコンテンツ",
+    items: [
+      { key: "works", href: "/works", label: "実績" },
+      { key: "services", href: "/services", label: "料金" },
+      { key: "blog", href: "/blog", label: "お知らせ" },
+      { key: "seo", href: "/seo", label: "SEO" },
+    ],
+  },
 ];
 
 function shell(opts: {
   title: string;
   active: NavKey;
   unreadCount: number;
+  overdueCount?: number;
   content: string;
 }): string {
-  const nav = NAV_ITEMS.map((item) => {
-    const badge =
-      item.key === "inquiries" && opts.unreadCount > 0
-        ? `<span class="badge">${opts.unreadCount}</span>`
-        : "";
-    return `<a href="${item.href}" class="${item.key === opts.active ? "active" : ""}">${esc(item.label)}${badge}</a>`;
+  const nav = NAV_SECTIONS.map((section) => {
+    const items = section.items
+      .map((item) => {
+        let badgeCount = 0;
+        if (item.key === "inquiries") badgeCount = opts.unreadCount;
+        if (item.key === "orders") badgeCount = opts.overdueCount ?? 0;
+        const badge = badgeCount > 0 ? `<span class="badge">${badgeCount}</span>` : "";
+        return `<a href="${item.href}" class="${item.key === opts.active ? "active" : ""}">${esc(item.label)}${badge}</a>`;
+      })
+      .join("");
+    return `<div class="nav-section-label">${esc(section.label)}</div>${items}`;
   }).join("");
 
   const body = `
@@ -282,18 +352,52 @@ function banner(message?: { type: "ok" | "error"; text: string }): string {
   return `<div class="banner ${message.type === "ok" ? "ok" : "error"}">${esc(message.text)}</div>`;
 }
 
+export function formatYen(n: number): string {
+  return `${n.toLocaleString("ja-JP")}円`;
+}
+
 export function overviewPage(data: {
   worksCount: number;
   servicesCount: number;
   blogCount: number;
   unreadCount: number;
   inquiriesCount: number;
+  thisMonthRevenue: number;
+  unpaidTotal: number;
+  inProgressCount: number;
+  overdueCount: number;
   message?: { type: "ok" | "error"; text: string };
 }): string {
   const content = `
     <h1>ダッシュボード</h1>
     <p class="hint">各項目を編集すると、数十秒〜1分ほどで公開サイトに反映されます。</p>
     ${banner(data.message)}
+
+    <h2 style="margin-top:28px">業務状況</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="num">${formatYen(data.thisMonthRevenue)}</div>
+        <div class="label">今月の確定売上</div>
+        <a href="/revenue">詳しく見る →</a>
+      </div>
+      <div class="card">
+        <div class="num">${formatYen(data.unpaidTotal)}</div>
+        <div class="label">未入金の合計</div>
+        <a href="/orders">確認する →</a>
+      </div>
+      <div class="card">
+        <div class="num">${data.inProgressCount}${data.overdueCount > 0 ? ` <span style="font-size:14px" class="overdue">(納期超過 ${data.overdueCount})</span>` : ""}</div>
+        <div class="label">進行中の案件</div>
+        <a href="/orders">確認する →</a>
+      </div>
+      <div class="card">
+        <div class="num">${data.unreadCount} <span style="font-size:14px;color:#5b6472">/ ${data.inquiriesCount}</span></div>
+        <div class="label">未読のお問い合わせ</div>
+        <a href="/inquiries">確認する →</a>
+      </div>
+    </div>
+
+    <h2 style="margin-top:36px">サイトコンテンツ</h2>
     <div class="cards">
       <div class="card">
         <div class="num">${data.worksCount}</div>
@@ -310,17 +414,13 @@ export function overviewPage(data: {
         <div class="label">お知らせ</div>
         <a href="/blog">編集する →</a>
       </div>
-      <div class="card">
-        <div class="num">${data.unreadCount} <span style="font-size:14px;color:#5b6472">/ ${data.inquiriesCount}</span></div>
-        <div class="label">未読のお問い合わせ</div>
-        <a href="/inquiries">確認する →</a>
-      </div>
     </div>
   `;
   return shell({
     title: "ダッシュボード",
     active: "overview",
     unreadCount: data.unreadCount,
+    overdueCount: data.overdueCount,
     content,
   });
 }
@@ -552,4 +652,220 @@ export function inquiriesPage(data: {
     ${list}
   `;
   return shell({ title: "お問い合わせ", active: "inquiries", unreadCount: data.unreadCount, content });
+}
+
+function isOverdue(order: Order): boolean {
+  if (order.status === "納品済み" || order.status === "キャンセル") return false;
+  if (!order.dueDate) return false;
+  return order.dueDate < new Date().toISOString().slice(0, 10);
+}
+
+function selectOptions(options: readonly string[], selected?: string): string {
+  return options
+    .map((o) => `<option value="${esc(o)}" ${o === selected ? "selected" : ""}>${esc(o)}</option>`)
+    .join("");
+}
+
+export function ordersListPage(data: {
+  orders: Order[];
+  unreadCount: number;
+  overdueCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const sorted = [...data.orders].sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"));
+
+  const rows =
+    sorted.length === 0
+      ? `<tr><td colspan="8" class="hint" style="white-space:normal">まだ受注データがありません。「新規追加」から登録してください。</td></tr>`
+      : sorted
+          .map((o) => {
+            const overdue = isOverdue(o);
+            return `
+        <tr>
+          <td>${esc(o.clientName)}</td>
+          <td>${esc(o.serviceType)}</td>
+          <td>${formatYen(o.amount)}</td>
+          <td>${esc(o.orderDate)}</td>
+          <td class="${overdue ? "overdue" : ""}">${esc(o.dueDate)}${overdue ? " (超過)" : ""}</td>
+          <td><span class="status-pill status-${esc(o.status)}">${esc(o.status)}</span></td>
+          <td><span class="status-pill status-${esc(o.paymentStatus)}">${esc(o.paymentStatus)}</span></td>
+          <td class="actions">
+            <a href="/orders/${encodeURIComponent(o.key)}/edit" class="small" style="text-decoration:none;display:inline-block;padding:5px 14px;border:1px solid #1e3a5f;border-radius:999px;color:#1e3a5f;font-size:12px;font-weight:700">編集</a>
+            <form method="post" action="/orders/${encodeURIComponent(o.key)}/delete" onsubmit="return confirm('この受注を削除しますか？');">
+              <button class="small" type="submit" style="color:#b3261e;border-color:#b3261e">削除</button>
+            </form>
+          </td>
+        </tr>
+      `;
+          })
+          .join("");
+
+  const content = `
+    <h1>受注管理</h1>
+    <h2>LPなど外部で受けた案件の納期・金額・進捗を管理します</h2>
+    ${banner(data.message)}
+    <div class="add-bar">
+      <a href="/orders/new" class="primary" style="text-decoration:none;display:inline-block;border-radius:999px;padding:10px 28px;font-size:14px;font-weight:700;background:#1e3a5f;color:#fff">+ 新規受注を追加</a>
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>クライアント</th>
+            <th>サービス</th>
+            <th>金額</th>
+            <th>受注日</th>
+            <th>納期</th>
+            <th>進捗</th>
+            <th>入金</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+  return shell({
+    title: "受注管理",
+    active: "orders",
+    unreadCount: data.unreadCount,
+    overdueCount: data.overdueCount,
+    content,
+  });
+}
+
+export function orderFormPage(data: {
+  order?: Order;
+  unreadCount: number;
+  overdueCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const o = data.order;
+  const action = o ? `/orders/${encodeURIComponent(o.key)}` : "/orders";
+
+  const content = `
+    <h1>${o ? "受注を編集" : "受注を新規追加"}</h1>
+    <h2>LINEなど外部で受けたご依頼の情報を入力してください</h2>
+    ${banner(data.message)}
+    <form method="post" action="${action}">
+      <fieldset>
+        <label>クライアント名</label>
+        <input type="text" name="clientName" value="${esc(o?.clientName)}" required />
+
+        <div class="field-row">
+          <div>
+            <label>サービス種別</label>
+            <select name="serviceType">${selectOptions(ORDER_SERVICE_TYPES, o?.serviceType)}</select>
+          </div>
+          <div>
+            <label>金額(円)</label>
+            <input type="text" inputmode="numeric" name="amount" value="${o ? o.amount : ""}" placeholder="150000" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label>受注日</label>
+            <input type="text" name="orderDate" value="${esc(o?.orderDate)}" placeholder="2026-08-25" />
+          </div>
+          <div>
+            <label>納期</label>
+            <input type="text" name="dueDate" value="${esc(o?.dueDate)}" placeholder="2026-09-30" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label>進捗ステータス</label>
+            <select name="status">${selectOptions(ORDER_STATUSES, o?.status)}</select>
+          </div>
+          <div>
+            <label>入金状況</label>
+            <select name="paymentStatus">${selectOptions(PAYMENT_STATUSES, o?.paymentStatus)}</select>
+          </div>
+        </div>
+
+        <label>入金日(入金済みの場合)</label>
+        <input type="text" name="paidDate" value="${esc(o?.paidDate)}" placeholder="2026-09-15" />
+
+        <label>メモ</label>
+        <textarea name="notes">${esc(o?.notes)}</textarea>
+      </fieldset>
+      <div class="save-bar">
+        <button class="primary" type="submit">保存する</button>
+        <a href="/orders" style="margin-left:12px;font-size:13px;color:#5b6472">キャンセルして戻る</a>
+      </div>
+    </form>
+  `;
+  return shell({
+    title: o ? "受注を編集" : "受注を新規追加",
+    active: "orders",
+    unreadCount: data.unreadCount,
+    overdueCount: data.overdueCount,
+    content,
+  });
+}
+
+export function revenuePage(data: {
+  unreadCount: number;
+  overdueCount: number;
+  thisMonthRevenue: number;
+  yearToDateRevenue: number;
+  unpaidTotal: number;
+  pipelineTotal: number;
+  monthly: { month: string; total: number; count: number }[];
+}): string {
+  const rows =
+    data.monthly.length === 0
+      ? `<tr><td colspan="3" class="hint" style="white-space:normal">入金済みの受注データがまだありません。</td></tr>`
+      : data.monthly
+          .map(
+            (m) => `
+        <tr>
+          <td>${esc(m.month)}</td>
+          <td>${formatYen(m.total)}</td>
+          <td>${m.count}件</td>
+        </tr>
+      `
+          )
+          .join("");
+
+  const content = `
+    <h1>売上</h1>
+    <h2>受注管理で「入金済み」にした金額をもとに集計しています</h2>
+
+    <div class="revenue-cards">
+      <div class="card">
+        <div class="num">${formatYen(data.thisMonthRevenue)}</div>
+        <div class="label">今月の確定売上</div>
+      </div>
+      <div class="card">
+        <div class="num">${formatYen(data.yearToDateRevenue)}</div>
+        <div class="label">今年の累計売上</div>
+      </div>
+      <div class="card">
+        <div class="num">${formatYen(data.unpaidTotal)}</div>
+        <div class="label">未入金の合計</div>
+      </div>
+      <div class="card">
+        <div class="num">${formatYen(data.pipelineTotal)}</div>
+        <div class="label">進行中・見積もり中の見込み額</div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:8px">月別の確定売上</h2>
+    <div class="table-wrap" style="margin-top:12px">
+      <table class="data">
+        <thead><tr><th>月</th><th>売上</th><th>件数</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+  return shell({
+    title: "売上",
+    active: "revenue",
+    unreadCount: data.unreadCount,
+    overdueCount: data.overdueCount,
+    content,
+  });
 }

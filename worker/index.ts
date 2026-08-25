@@ -1,6 +1,6 @@
 export interface Env {
   ASSETS: Fetcher;
-  INQUIRIES: KVNamespace;
+  DATA: KVNamespace;
 }
 
 const REQUIRED_FIELDS = ["name", "email", "inquiryType", "message"] as const;
@@ -23,7 +23,7 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
   const receivedAt = Date.now();
   const key = `inquiry:${receivedAt}:${id}`;
 
-  await env.INQUIRIES.put(
+  await env.DATA.put(
     key,
     JSON.stringify({
       id,

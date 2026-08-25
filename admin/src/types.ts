@@ -31,6 +31,34 @@ export type BlogPost = {
   body: string;
 };
 
+export const ORDER_STATUSES = ["見積もり中", "進行中", "納品済み", "キャンセル"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+export const PAYMENT_STATUSES = ["未入金", "入金済み"] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+export const ORDER_SERVICE_TYPES = [
+  "HP制作",
+  "LP制作",
+  "システム・Webアプリ開発",
+  "その他",
+] as const;
+
+export type Order = {
+  key: string;
+  id: string;
+  clientName: string;
+  serviceType: string;
+  amount: number;
+  orderDate: string;
+  dueDate: string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paidDate: string;
+  notes: string;
+  createdAt: number;
+};
+
 export type Inquiry = {
   key: string;
   id: string;

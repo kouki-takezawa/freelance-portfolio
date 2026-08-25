@@ -10,7 +10,7 @@
   },
   "kv_namespaces": [
     {
-      "binding": "INQUIRIES",
+      "binding": "DATA",
       "id": "e37dfd650b9a4271b2bdb5b33e364b56"
     }
   ]

@@ -3,18 +3,34 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createSessionCookie, timingSafeEqual, verifySessionCookie } from "./auth";
 import { getJsonFile, putJsonFile } from "./github";
 import {
+  computeRevenue,
+  createOrder,
+  deleteOrder,
+  getOrder,
+  listOrders,
+  putOrder,
+} from "./orders";
+import {
   blogPage,
   inquiriesPage,
   loginPage,
+  orderFormPage,
+  ordersListPage,
   overviewPage,
+  revenuePage,
   seoPage,
   servicesPage,
   worksPage,
 } from "./templates";
 import {
+  ORDER_STATUSES,
+  PAYMENT_STATUSES,
   SEO_PAGES,
   type BlogPost,
   type Inquiry,
+  type Order,
+  type OrderStatus,
+  type PaymentStatus,
   type ServiceMenu,
   type SeoMap,
   type WorkCase,
@@ -25,7 +41,7 @@ type Bindings = {
   ADMIN_PASSWORD: string;
   SESSION_SECRET: string;
   CONTENT_GITHUB_TOKEN: string;
-  INQUIRIES: KVNamespace;
+  DATA: KVNamespace;
 };
 
 const COOKIE_NAME = "admin_session";
@@ -44,7 +60,7 @@ function slugify(text: string): string {
 }
 
 async function getUnreadCount(env: Bindings): Promise<number> {
-  const { keys } = await env.INQUIRIES.list({ prefix: "inquiry:" });
+  const { keys } = await env.DATA.list({ prefix: "inquiry:" });
   return keys.filter((k) => (k.metadata as { read?: boolean } | null)?.read === false).length;
 }
 
@@ -90,13 +106,15 @@ app.use("/*", async (c, next) => {
 
 app.get("/", async (c) => {
   try {
-    const [works, services, blog, unreadCount, inquiriesCount] = await Promise.all([
+    const [works, services, blog, orders, unreadCount, inquiriesCount] = await Promise.all([
       getJsonFile<WorkCase[]>(c.env.CONTENT_GITHUB_TOKEN, "content/works.json"),
       getJsonFile<ServiceMenu[]>(c.env.CONTENT_GITHUB_TOKEN, "content/services.json"),
       getJsonFile<BlogPost[]>(c.env.CONTENT_GITHUB_TOKEN, "content/blog.json"),
+      listOrders(c.env),
       getUnreadCount(c.env),
-      c.env.INQUIRIES.list({ prefix: "inquiry:" }).then((r) => r.keys.length),
+      c.env.DATA.list({ prefix: "inquiry:" }).then((r) => r.keys.length),
     ]);
+    const revenue = computeRevenue(orders);
     return c.html(
       overviewPage({
         worksCount: works.value.length,
@@ -104,6 +122,10 @@ app.get("/", async (c) => {
         blogCount: blog.value.length,
         unreadCount,
         inquiriesCount,
+        thisMonthRevenue: revenue.thisMonthRevenue,
+        unpaidTotal: revenue.unpaidTotal,
+        inProgressCount: revenue.inProgressCount,
+        overdueCount: revenue.overdueCount,
       })
     );
   } catch (err) {
@@ -114,6 +136,10 @@ app.get("/", async (c) => {
         blogCount: 0,
         unreadCount: 0,
         inquiriesCount: 0,
+        thisMonthRevenue: 0,
+        unpaidTotal: 0,
+        inProgressCount: 0,
+        overdueCount: 0,
         message: { type: "error", text: (err as Error).message },
       }),
       500
@@ -275,6 +301,101 @@ app.post("/blog", async (c) => {
   });
 });
 
+app.get("/orders", async (c) => {
+  const [orders, unreadCount] = await Promise.all([
+    listOrders(c.env),
+    getUnreadCount(c.env),
+  ]);
+  const revenue = computeRevenue(orders);
+  return c.html(
+    ordersListPage({ orders, unreadCount, overdueCount: revenue.overdueCount })
+  );
+});
+
+app.get("/orders/new", async (c) => {
+  const [orders, unreadCount] = await Promise.all([
+    listOrders(c.env),
+    getUnreadCount(c.env),
+  ]);
+  const revenue = computeRevenue(orders);
+  return c.html(orderFormPage({ unreadCount, overdueCount: revenue.overdueCount }));
+});
+
+app.post("/orders", async (c) => {
+  const body = await c.req.parseBody();
+  const order = parseOrderForm(body);
+  await createOrder(c.env, { ...order, id: crypto.randomUUID(), createdAt: Date.now() });
+  return c.redirect("/orders");
+});
+
+app.get("/orders/:key/edit", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  const [order, orders, unreadCount] = await Promise.all([
+    getOrder(c.env, key),
+    listOrders(c.env),
+    getUnreadCount(c.env),
+  ]);
+  if (!order) return c.redirect("/orders");
+  const revenue = computeRevenue(orders);
+  return c.html(orderFormPage({ order, unreadCount, overdueCount: revenue.overdueCount }));
+});
+
+app.post("/orders/:key", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  const existing = await getOrder(c.env, key);
+  if (!existing) return c.redirect("/orders");
+  const body = await c.req.parseBody();
+  const updates = parseOrderForm(body);
+  await putOrder(c.env, { ...existing, ...updates, key });
+  return c.redirect("/orders");
+});
+
+app.post("/orders/:key/delete", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  await deleteOrder(c.env, key);
+  return c.redirect("/orders");
+});
+
+function parseOrderForm(
+  body: Record<string, string | File>
+): Omit<Order, "key" | "id" | "createdAt"> {
+  const amountRaw = String(body.amount ?? "").replace(/[^0-9]/g, "");
+  return {
+    clientName: String(body.clientName ?? "").trim(),
+    serviceType: String(body.serviceType ?? "").trim(),
+    amount: amountRaw ? Number(amountRaw) : 0,
+    orderDate: String(body.orderDate ?? "").trim(),
+    dueDate: String(body.dueDate ?? "").trim(),
+    status: (ORDER_STATUSES as readonly string[]).includes(String(body.status))
+      ? (String(body.status) as OrderStatus)
+      : "見積もり中",
+    paymentStatus: (PAYMENT_STATUSES as readonly string[]).includes(String(body.paymentStatus))
+      ? (String(body.paymentStatus) as PaymentStatus)
+      : "未入金",
+    paidDate: String(body.paidDate ?? "").trim(),
+    notes: String(body.notes ?? "").trim(),
+  };
+}
+
+app.get("/revenue", async (c) => {
+  const [orders, unreadCount] = await Promise.all([
+    listOrders(c.env),
+    getUnreadCount(c.env),
+  ]);
+  const revenue = computeRevenue(orders);
+  return c.html(
+    revenuePage({
+      unreadCount,
+      overdueCount: revenue.overdueCount,
+      thisMonthRevenue: revenue.thisMonthRevenue,
+      yearToDateRevenue: revenue.yearToDateRevenue,
+      unpaidTotal: revenue.unpaidTotal,
+      pipelineTotal: revenue.pipelineTotal,
+      monthly: revenue.monthly,
+    })
+  );
+});
+
 app.get("/inquiries", async (c) => {
   const inquiries = await listInquiries(c.env);
   const unreadCount = inquiries.filter((i) => !i.read).length;
@@ -283,11 +404,11 @@ app.get("/inquiries", async (c) => {
 
 app.post("/inquiries/:key/toggle-read", async (c) => {
   const key = decodeURIComponent(c.req.param("key"));
-  const raw = await c.env.INQUIRIES.get(key);
+  const raw = await c.env.DATA.get(key);
   if (raw) {
     const inquiry = JSON.parse(raw) as Inquiry;
     const nextRead = !inquiry.read;
-    await c.env.INQUIRIES.put(key, JSON.stringify({ ...inquiry, read: nextRead }), {
+    await c.env.DATA.put(key, JSON.stringify({ ...inquiry, read: nextRead }), {
       metadata: { read: nextRead },
     });
   }
@@ -296,15 +417,15 @@ app.post("/inquiries/:key/toggle-read", async (c) => {
 
 app.post("/inquiries/:key/delete", async (c) => {
   const key = decodeURIComponent(c.req.param("key"));
-  await c.env.INQUIRIES.delete(key);
+  await c.env.DATA.delete(key);
   return c.redirect("/inquiries");
 });
 
 async function listInquiries(env: Bindings): Promise<Inquiry[]> {
-  const { keys } = await env.INQUIRIES.list({ prefix: "inquiry:" });
+  const { keys } = await env.DATA.list({ prefix: "inquiry:" });
   const values = await Promise.all(
     keys.map(async (k) => {
-      const raw = await env.INQUIRIES.get(k.name);
+      const raw = await env.DATA.get(k.name);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as Omit<Inquiry, "key">;
       return { ...parsed, key: k.name } as Inquiry;
