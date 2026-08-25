@@ -40,7 +40,6 @@ npm run dev
 ## 未確定・要対応のTODO
 
 - `src/lib/site.ts`: 屋号が決まったら `siteName` / `siteNameShort` を差し替え。問い合わせ受信用メールアドレス(`email`)も設定。独自ドメインを取得したら`siteUrl`も更新
-- `src/lib/site.ts`: スレッズ(`threadsUrl`)・インスタグラム(`instagramUrl`)のアカウントURLが仮設定(`TODO`)のため、実際のアカウントURLに差し替え
 - `functions/api/contact.js`: 現状はログ出力のみの仮実装。送信先メールが決まったらResend等のメールAPI連携を実装
 
 ## デプロイ (Cloudflare)
