@@ -41,6 +41,15 @@ const strengths = [
 
 const iconKinds = ["hp", "lp", "system", "line"] as const;
 
+function parsePrice(priceFrom: string): number {
+  const digits = priceFrom.replace(/[^0-9]/g, "");
+  return digits ? Number(digits) : Infinity;
+}
+
+const cheapestServiceSlug = services.reduce((min, s) =>
+  parsePrice(s.priceFrom) < parsePrice(min.priceFrom) ? s : min
+).slug;
+
 const processSteps = [
   {
     step: "01",
@@ -68,11 +77,9 @@ const processSteps = [
   },
 ];
 
+// 表示順は心理的優先度で調整: 最大の懸念(品質)を最初に解消し、
+// 参入障壁(相談の気軽さ)を早めに下げ、最後は安心感で締める
 const faqs = [
-  {
-    q: "対応エリアはどこですか？地方でも依頼できますか？",
-    a: "リモート対応のため全国どこからでもご依頼いただけます。打ち合わせはオンライン(ビデオ通話・チャット・メール)が中心です。栃木県内であれば対面でのご相談も可能です。",
-  },
   {
     q: "相場より料金が安いようですが、品質は大丈夫ですか？",
     a: "制作会社や仲介エージェントを介さず直接ご依頼いただく分の中間コストを料金に還元しているため、相場より抑えた価格でご提供できています。品質を落として安くしているわけではありませんので、ご安心ください。",
@@ -80,6 +87,10 @@ const faqs = [
   {
     q: "何を依頼すればいいか、まだ決まっていません。相談だけでも大丈夫ですか？",
     a: "もちろん問題ありません。現状の課題やご希望をお伺いした上で、HP・LP・システムのどれが適しているか、進め方も含めてご提案しますので、まずはお気軽にご相談ください。",
+  },
+  {
+    q: "対応エリアはどこですか？地方でも依頼できますか？",
+    a: "リモート対応のため全国どこからでもご依頼いただけます。打ち合わせはオンライン(ビデオ通話・チャット・メール)が中心です。栃木県内であれば対面でのご相談も可能です。",
   },
   {
     q: "支払いのタイミングや方法は？",
@@ -112,41 +123,48 @@ export default function Home() {
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
               {siteConfig.description}
             </p>
-            <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
-              <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
-                LINE公式アカウント構築 3万円〜
-              </span>
-              <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
-                システム・Webアプリ開発 5万円〜
-              </span>
-              <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
+            <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-accent">
+              <span className="rounded-full bg-accent/10 px-4 py-1.5">
                 相談・お見積り無料
               </span>
             </div>
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-8">
               <Link
                 href="/contact"
-                className="rounded-full bg-accent px-7 py-3 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
+                className="inline-block rounded-full bg-accent px-9 py-4 text-base font-bold text-accent-foreground shadow-sm transition-opacity hover:opacity-90"
               >
-                無料で相談する
+                無料で相談する →
               </Link>
+            </div>
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
               <Link
                 href="/services"
-                className="rounded-full border border-border bg-background px-7 py-3 text-sm font-semibold transition-colors hover:border-accent hover:text-accent"
+                className="font-semibold text-foreground/70 underline decoration-border underline-offset-4 transition-colors hover:text-accent"
               >
                 サービス・料金を見る
               </Link>
+              <Link
+                href="/estimate"
+                className="font-semibold text-foreground/70 underline decoration-border underline-offset-4 transition-colors hover:text-accent"
+              >
+                かんたん見積もりを試す
+              </Link>
             </div>
-            <Link
-              href="/estimate"
-              className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-accent hover:underline"
-            >
-              かんたん見積もりシミュレーターを試す →
-            </Link>
           </div>
           <div className="lg:pl-4">
             <HeroIllustration />
           </div>
+        </div>
+        <div className="hidden justify-center pb-6 sm:flex">
+          <a
+            href="#strengths"
+            aria-label="下にスクロールして詳細を見る"
+            className="flex h-9 w-9 animate-bounce items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-accent hover:text-accent"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </a>
         </div>
       </section>
 
@@ -205,23 +223,33 @@ export default function Home() {
           </Link>
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {services.map((service, i) => (
-            <div
-              key={service.slug}
-              className="rounded-2xl border border-border p-6"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">
-                <ServiceIcon kind={iconKinds[i] ?? "hp"} />
-              </span>
-              <h3 className="mt-4 text-base font-semibold">{service.name}</h3>
-              <p className="mt-2 text-lg font-bold text-accent">
-                {service.priceFrom}
-              </p>
-              <p className="mt-3 text-sm leading-relaxed text-muted">
-                {service.description}
-              </p>
-            </div>
-          ))}
+          {services.map((service, i) => {
+            const isCheapest = service.slug === cheapestServiceSlug;
+            return (
+              <div
+                key={service.slug}
+                className={`relative rounded-2xl border p-6 ${
+                  isCheapest ? "border-accent bg-accent/5 shadow-sm" : "border-border"
+                }`}
+              >
+                {isCheapest && (
+                  <span className="absolute -top-3 left-6 rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">
+                    はじめやすい
+                  </span>
+                )}
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">
+                  <ServiceIcon kind={iconKinds[i] ?? "hp"} />
+                </span>
+                <h3 className="mt-4 text-base font-semibold">{service.name}</h3>
+                <p className="mt-2 text-lg font-bold text-accent">
+                  {service.priceFrom}
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-muted">
+                  {service.description}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
 

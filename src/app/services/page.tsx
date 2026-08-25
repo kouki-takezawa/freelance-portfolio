@@ -8,6 +8,15 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 const seo = getSeo("/services");
 const iconKinds = ["hp", "lp", "system", "line"] as const;
 
+function parsePrice(priceFrom: string): number {
+  const digits = priceFrom.replace(/[^0-9]/g, "");
+  return digits ? Number(digits) : Infinity;
+}
+
+const cheapestServiceSlug = services.reduce((min, s) =>
+  parsePrice(s.priceFrom) < parsePrice(min.priceFrom) ? s : min
+).slug;
+
 export const metadata: Metadata = {
   title: seo.title,
   description: seo.description,
@@ -33,11 +42,20 @@ export default function ServicesPage() {
       </p>
 
       <div className="mt-12 flex flex-col gap-8">
-        {services.map((service, i) => (
+        {services.map((service, i) => {
+          const isCheapest = service.slug === cheapestServiceSlug;
+          return (
           <div
             key={service.slug}
-            className="rounded-2xl border border-border p-8"
+            className={`relative rounded-2xl border p-8 ${
+              isCheapest ? "border-accent bg-accent/5 shadow-sm" : "border-border"
+            }`}
           >
+            {isCheapest && (
+              <span className="absolute -top-3 left-8 rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">
+                はじめやすい
+              </span>
+            )}
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-4">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
@@ -67,7 +85,8 @@ export default function ServicesPage() {
               ))}
             </ul>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-16">

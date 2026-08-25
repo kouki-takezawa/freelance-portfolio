@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import MobileStickyCta from "@/components/MobileStickyCta";
 import { siteConfig } from "@/lib/site";
 import { getSeo } from "@/lib/seo";
 
@@ -57,6 +58,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <div className="h-16 sm:hidden" aria-hidden="true" />
+        <MobileStickyCta />
         <Script
           src="https://static.cloudflareinsights.com/beacon.min.js"
           data-cf-beacon={`{"token": "${siteConfig.webAnalyticsToken}"}`}
