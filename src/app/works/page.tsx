@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { works } from "@/lib/works";
 import { getSeo } from "@/lib/seo";
+import ServiceIcon from "@/components/illustrations/ServiceIcon";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import { categoryVisual } from "@/lib/categoryVisual";
 
 const seo = getSeo("/works");
 
@@ -15,7 +18,8 @@ export default function WorksPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-      <p className="text-sm font-semibold text-accent">Works</p>
+      <Breadcrumbs items={[{ label: "制作事例" }]} />
+      <p className="mt-4 text-sm font-semibold text-accent">Works</p>
       <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
         制作事例
       </h1>
@@ -27,36 +31,48 @@ export default function WorksPage() {
       )}
 
       <div className="mt-12 grid gap-8 sm:grid-cols-2">
-        {works.map((work) => (
-          <div
-            key={work.slug}
-            className="rounded-2xl border border-border p-8"
-          >
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-accent">
-                {work.category}
-              </span>
-              {work.isSample && (
-                <span className="text-xs text-muted">対応イメージ</span>
-              )}
+        {works.map((work) => {
+          const visual = categoryVisual(work.category);
+          return (
+            <div
+              key={work.slug}
+              className={`overflow-hidden rounded-2xl border border-t-4 border-border ${visual.border}`}
+            >
+              <div className={`flex h-28 items-center justify-center ${visual.bg} text-accent`}>
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-background/80">
+                  <span className="scale-150">
+                    <ServiceIcon kind={visual.icon} />
+                  </span>
+                </span>
+              </div>
+              <div className="p-8">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-accent">
+                    {work.category}
+                  </span>
+                  {work.isSample && (
+                    <span className="text-xs text-muted">対応イメージ</span>
+                  )}
+                </div>
+                <h2 className="mt-4 text-lg font-bold">{work.title}</h2>
+                <p className="mt-3 text-sm leading-relaxed text-muted">
+                  {work.summary}
+                </p>
+                <ul className="mt-5 flex flex-col gap-2">
+                  {work.points.map((point) => (
+                    <li
+                      key={point}
+                      className="flex items-start gap-2 text-sm text-foreground/90"
+                    >
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <h2 className="mt-4 text-lg font-bold">{work.title}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-muted">
-              {work.summary}
-            </p>
-            <ul className="mt-5 flex flex-col gap-2">
-              {work.points.map((point) => (
-                <li
-                  key={point}
-                  className="flex items-start gap-2 text-sm text-foreground/90"
-                >
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                  {point}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-16 text-center">

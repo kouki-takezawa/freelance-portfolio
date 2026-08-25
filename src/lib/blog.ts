@@ -6,6 +6,7 @@ export type BlogPost = {
   excerpt: string;
   publishedAt: string;
   body: string;
+  category: string;
 };
 
 export const blogPosts: BlogPost[] = [...blogData].sort((a, b) =>

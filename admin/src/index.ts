@@ -282,6 +282,7 @@ app.post("/blog", async (c) => {
     items.push({
       slug: slugify(title),
       title,
+      category: String(body[`category_${i}`] ?? "").trim() || "お知らせ",
       excerpt: String(body[`excerpt_${i}`] ?? "").trim(),
       publishedAt:
         String(body[`publishedAt_${i}`] ?? "").trim() ||

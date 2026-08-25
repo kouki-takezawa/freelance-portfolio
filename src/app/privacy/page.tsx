@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
 import { getSeo } from "@/lib/seo";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 const seo = getSeo("/privacy");
 
@@ -12,7 +13,8 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
-      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+      <Breadcrumbs items={[{ label: "プライバシーポリシー" }]} />
+      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
         プライバシーポリシー
       </h1>
       <p className="mt-6 text-sm leading-relaxed text-muted">

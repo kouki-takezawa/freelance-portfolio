@@ -5,6 +5,16 @@ import { works } from "@/lib/works";
 import HeroIllustration from "@/components/illustrations/HeroIllustration";
 import ServiceIcon from "@/components/illustrations/ServiceIcon";
 import { blogPosts } from "@/lib/blog";
+import { categoryVisual } from "@/lib/categoryVisual";
+
+const jumpLinks = [
+  { href: "#strengths", label: "選ばれる理由" },
+  { href: "#services", label: "サービス・料金" },
+  { href: "#flow", label: "ご依頼の流れ" },
+  { href: "#works", label: "制作事例" },
+  { href: "#blog", label: "お知らせ" },
+  { href: "#faq", label: "よくある質問" },
+];
 
 const strengths = [
   {
@@ -137,7 +147,24 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-t border-border bg-surface">
+      <nav
+        aria-label="ページ内ナビゲーション"
+        className="sticky top-[57px] z-40 border-b border-border bg-background/95 backdrop-blur sm:top-[65px]"
+      >
+        <div className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-6 py-2.5 text-xs font-semibold">
+          {jumpLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-foreground/70 transition-colors hover:bg-surface hover:text-accent"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      </nav>
+
+      <section id="strengths" className="border-t border-border bg-surface">
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <div className="flex items-end justify-between gap-4">
             <h2 className="text-xl font-bold sm:text-2xl">選ばれる理由</h2>
@@ -164,7 +191,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+      <section id="services" className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
         <div className="flex items-end justify-between gap-4">
           <h2 className="text-xl font-bold sm:text-2xl">サービス・料金</h2>
           <Link
@@ -195,7 +222,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-t border-border bg-surface">
+      <section id="flow" className="border-t border-border bg-surface">
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <h2 className="text-xl font-bold sm:text-2xl">ご依頼の流れ</h2>
           <p className="mt-2 text-sm text-muted">
@@ -217,7 +244,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+      <section id="works" className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
         <div className="flex items-end justify-between gap-4">
           <h2 className="text-xl font-bold sm:text-2xl">制作事例</h2>
           <Link
@@ -228,25 +255,30 @@ export default function Home() {
           </Link>
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-3">
-          {works.slice(0, 3).map((work) => (
-            <div
-              key={work.slug}
-              className="rounded-2xl border border-border bg-background p-6"
-            >
-              <p className="text-xs font-semibold text-accent">
-                {work.category}
-              </p>
-              <h3 className="mt-2 text-base font-semibold">{work.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted">
-                {work.summary}
-              </p>
-            </div>
-          ))}
+          {works.slice(0, 3).map((work) => {
+            const visual = categoryVisual(work.category);
+            return (
+              <div
+                key={work.slug}
+                className={`overflow-hidden rounded-2xl border border-t-4 border-border bg-background ${visual.border}`}
+              >
+                <div className="p-6">
+                  <p className="text-xs font-semibold text-accent">
+                    {work.category}
+                  </p>
+                  <h3 className="mt-2 text-base font-semibold">{work.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted">
+                    {work.summary}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
       {blogPosts.length > 0 && (
-        <section className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+        <section id="blog" className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <div className="flex items-end justify-between gap-4">
             <h2 className="text-xl font-bold sm:text-2xl">お知らせ</h2>
             <Link
@@ -261,9 +293,12 @@ export default function Home() {
               <Link
                 key={post.slug}
                 href={`/blog/${post.slug}`}
-                className="block rounded-2xl border border-border p-6 transition-colors hover:border-accent"
+                className="block rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-accent hover:bg-background"
               >
-                <h3 className="text-base font-semibold">{post.title}</h3>
+                <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-accent">
+                  {post.category}
+                </span>
+                <h3 className="mt-3 text-base font-semibold">{post.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
                   {post.excerpt}
                 </p>
@@ -273,7 +308,7 @@ export default function Home() {
         </section>
       )}
 
-      <section className="border-t border-border bg-surface">
+      <section id="faq" className="border-t border-border bg-surface">
         <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
           <h2 className="text-xl font-bold sm:text-2xl">よくあるご質問</h2>
           <div className="mt-8 flex flex-col gap-3">

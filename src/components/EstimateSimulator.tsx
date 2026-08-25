@@ -54,6 +54,12 @@ function formatYen(n: number): string {
   return n.toLocaleString("ja-JP");
 }
 
+const INQUIRY_TYPE_LABEL: Record<ServiceType, string> = {
+  hp: "HP制作",
+  lp: "LP制作",
+  system: "システム・Webアプリ開発",
+};
+
 export default function EstimateSimulator() {
   const [serviceType, setServiceType] = useState<ServiceType>("hp");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -75,6 +81,23 @@ export default function EstimateSimulator() {
     setServiceType(type);
     setSelected({});
   }
+
+  const contactHref = useMemo(() => {
+    const chosenOptions = service.options.filter((o) => selected[o.id]).map((o) => o.label);
+    const lines = [
+      `【かんたん見積もりシミュレーターより】`,
+      `ご依頼内容: ${service.label}`,
+      ...(chosenOptions.length > 0 ? [`追加のご要望: ${chosenOptions.join(" / ")}`] : []),
+      `目安金額: ${formatYen(total)}円〜`,
+      ``,
+      `(以下に詳しい内容をご記入ください)`,
+    ];
+    const params = new URLSearchParams({
+      type: INQUIRY_TYPE_LABEL[serviceType],
+      message: lines.join("\n"),
+    });
+    return `/contact?${params.toString()}`;
+  }, [service, selected, serviceType, total]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -139,7 +162,7 @@ export default function EstimateSimulator() {
           実際の金額は内容によって変動します。あくまで目安としてご利用ください。正式なお見積りは無料でご案内します。
         </p>
         <Link
-          href="/contact"
+          href={contactHref}
           className="mt-6 inline-block rounded-full bg-accent px-8 py-3 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
         >
           この内容で相談する

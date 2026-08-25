@@ -3,6 +3,7 @@ import Link from "next/link";
 import { services } from "@/lib/services";
 import { getSeo } from "@/lib/seo";
 import ServiceIcon from "@/components/illustrations/ServiceIcon";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 const seo = getSeo("/services");
 const iconKinds = ["hp", "lp", "system"] as const;
@@ -12,10 +13,18 @@ export const metadata: Metadata = {
   description: seo.description,
 };
 
+const comparisonRows = [
+  { label: "料金", others: "仲介マージンが上乗せされがち", us: "直接依頼で中間コストなし" },
+  { label: "やり取りの相手", others: "営業担当経由で制作者と直接話せないことも", us: "制作者本人と直接やり取り" },
+  { label: "見積り・相談", others: "有料の場合がある", us: "無料" },
+  { label: "対応の柔軟さ", others: "決まったプラン内での対応が中心", us: "予算・要望に応じて内容を調整" },
+];
+
 export default function ServicesPage() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-      <p className="text-sm font-semibold text-accent">Services</p>
+      <Breadcrumbs items={[{ label: "サービス・料金" }]} />
+      <p className="mt-4 text-sm font-semibold text-accent">Services</p>
       <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
         サービス・料金
       </h1>
@@ -59,6 +68,33 @@ export default function ServicesPage() {
             </ul>
           </div>
         ))}
+      </div>
+
+      <div className="mt-16">
+        <h2 className="text-lg font-bold sm:text-xl">よくある制作会社との違い</h2>
+        <p className="mt-2 text-sm text-muted">
+          仲介会社を挟まず直接ご依頼いただくことで、価格と柔軟さの両方を実現しています。
+        </p>
+        <div className="mt-6 overflow-x-auto rounded-2xl border border-border">
+          <table className="w-full min-w-[480px] border-collapse text-sm">
+            <thead>
+              <tr className="bg-surface text-left">
+                <th className="p-4 font-semibold text-foreground/70">比較項目</th>
+                <th className="p-4 font-semibold text-foreground/70">一般的な制作会社</th>
+                <th className="p-4 font-semibold text-accent">ヨリソイワークス</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparisonRows.map((row) => (
+                <tr key={row.label} className="border-t border-border">
+                  <td className="p-4 font-semibold">{row.label}</td>
+                  <td className="p-4 text-muted">{row.others}</td>
+                  <td className="p-4 font-semibold text-accent">{row.us}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="mt-16 rounded-2xl bg-surface p-8 text-center">

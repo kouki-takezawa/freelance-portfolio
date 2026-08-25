@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { blogPosts, getBlogPost } from "@/lib/blog";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 export function generateStaticParams() {
   return blogPosts.map((post) => ({ slug: post.slug }));
@@ -39,11 +40,14 @@ export default async function BlogPostPage({
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-16 sm:py-20">
-      <Link href="/blog" className="text-sm font-semibold text-accent hover:underline">
-        ← お知らせ一覧へ
-      </Link>
-      <p className="mt-6 text-xs text-muted">{formatDate(post.publishedAt)}</p>
-      <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+      <Breadcrumbs items={[{ label: "お知らせ", href: "/blog" }, { label: post.title }]} />
+      <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-muted">
+        <span className="rounded-full bg-surface px-2.5 py-1 font-semibold text-accent">
+          {post.category}
+        </span>
+        <span>{formatDate(post.publishedAt)}</span>
+      </div>
+      <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
         {post.title}
       </h1>
 

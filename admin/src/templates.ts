@@ -535,8 +535,16 @@ function blogFieldset(index: number, post?: BlogPost): string {
       <legend>お知らせ ${index + 1}${post ? "" : "(新規)"}</legend>
       <label>タイトル</label>
       <input type="text" name="title_${index}" value="${esc(post?.title)}" />
-      <label>公開日 (YYYY-MM-DD)</label>
-      <input type="text" name="publishedAt_${index}" value="${esc(post?.publishedAt)}" placeholder="2026-08-25" />
+      <div class="field-row">
+        <div>
+          <label>カテゴリ (例: 考え方 / 料金 / SEO対策)</label>
+          <input type="text" name="category_${index}" value="${esc(post?.category)}" />
+        </div>
+        <div>
+          <label>公開日 (YYYY-MM-DD)</label>
+          <input type="text" name="publishedAt_${index}" value="${esc(post?.publishedAt)}" placeholder="2026-08-25" />
+        </div>
+      </div>
       <label>一覧に表示する概要文</label>
       <textarea name="excerpt_${index}">${esc(post?.excerpt)}</textarea>
       <label>本文(段落を分けたい場合は空行を1行入れてください)</label>

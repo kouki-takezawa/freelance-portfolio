@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getSeo } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 const seo = getSeo("/about");
 
@@ -41,7 +42,8 @@ const values = [
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
-      <p className="text-sm font-semibold text-accent">About</p>
+      <Breadcrumbs items={[{ label: "プロフィール" }]} />
+      <p className="mt-4 text-sm font-semibold text-accent">About</p>
       <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
         プロフィール
       </h1>

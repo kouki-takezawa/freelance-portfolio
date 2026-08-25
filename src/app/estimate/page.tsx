@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSeo } from "@/lib/seo";
 import EstimateSimulator from "@/components/EstimateSimulator";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 const seo = getSeo("/estimate");
 
@@ -12,7 +13,8 @@ export const metadata: Metadata = {
 export default function EstimatePage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-16 sm:py-20">
-      <p className="text-sm font-semibold text-accent">Estimate</p>
+      <Breadcrumbs items={[{ label: "かんたん見積もり" }]} />
+      <p className="mt-4 text-sm font-semibold text-accent">Estimate</p>
       <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
         かんたん見積もりシミュレーター
       </h1>

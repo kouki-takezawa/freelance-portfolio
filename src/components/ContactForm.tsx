@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 type Status = "idle" | "submitting" | "success" | "error";
@@ -14,8 +15,13 @@ const budgetRanges = [
 ];
 
 export default function ContactForm() {
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+
+  const prefilledType = searchParams.get("type") ?? "";
+  const defaultInquiryType = inquiryTypes.includes(prefilledType) ? prefilledType : "";
+  const defaultMessage = searchParams.get("message") ?? "";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -90,7 +96,7 @@ export default function ContactForm() {
           <select
             required
             name="inquiryType"
-            defaultValue=""
+            defaultValue={defaultInquiryType}
             className="rounded-lg border border-border px-4 py-3 text-base outline-none focus:border-accent"
           >
             <option value="" disabled>
@@ -128,7 +134,8 @@ export default function ContactForm() {
           required
           name="message"
           rows={6}
-          className="rounded-lg border border-border px-4 py-3 text-sm outline-none focus:border-accent"
+          defaultValue={defaultMessage}
+          className="rounded-lg border border-border px-4 py-3 text-base outline-none focus:border-accent"
           placeholder="現状のお悩みやご要望をお聞かせください"
         />
       </label>

@@ -26,6 +26,7 @@ export type SeoMap = Record<string, SeoEntry>;
 export type BlogPost = {
   slug: string;
   title: string;
+  category: string;
   excerpt: string;
   publishedAt: string;
   body: string;

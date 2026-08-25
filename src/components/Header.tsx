@@ -13,7 +13,7 @@ export default function Header() {
           </Link>
         </div>
         <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
-          {siteConfig.navLinks
+          {siteConfig.primaryNavLinks
             .filter((link) => link.href !== "/contact")
             .map((link) => (
               <Link
