@@ -12,6 +12,16 @@ import {
   putOrder,
 } from "./orders";
 import {
+  createSocialPost,
+  deleteSocialPost,
+  getSocialPost,
+  listDueSocialPosts,
+  listSocialPosts,
+  putSocialPost,
+} from "./social/store";
+import { getMetaCredentials, publishSocialPost, refreshMetaTokensIfNeeded } from "./social/meta";
+import { generateCardImage } from "./social/card";
+import {
   analyticsPage,
   blogPage,
   inquiriesPage,
@@ -22,12 +32,15 @@ import {
   revenuePage,
   seoPage,
   servicesPage,
+  socialFormPage,
+  socialListPage,
   worksPage,
 } from "./templates";
 import {
   ORDER_STATUSES,
   PAYMENT_STATUSES,
   SEO_PAGES,
+  SOCIAL_PLATFORMS,
   type BlogPost,
   type Inquiry,
   type Order,
@@ -35,6 +48,8 @@ import {
   type PaymentStatus,
   type ServiceMenu,
   type SeoMap,
+  type SocialPlatform,
+  type SocialPost,
   type WorkCase,
 } from "./types";
 
@@ -44,10 +59,17 @@ type Bindings = {
   SESSION_SECRET: string;
   CONTENT_GITHUB_TOKEN: string;
   CF_ANALYTICS_TOKEN: string;
+  META_IG_ACCESS_TOKEN?: string;
+  META_IG_USER_ID?: string;
+  META_THREADS_ACCESS_TOKEN?: string;
+  META_THREADS_USER_ID?: string;
   DATA: KVNamespace;
+  MEDIA: R2Bucket;
+  ASSETS: Fetcher;
 };
 
 const COOKIE_NAME = "admin_session";
+const PUBLIC_ADMIN_URL = "https://freelance-hp-admin.yorisoi-works.workers.dev";
 
 type AppContext = Context<{ Bindings: Bindings }>;
 
@@ -153,6 +175,29 @@ app.post("/login", async (c) => {
 app.post("/logout", (c) => {
   deleteCookie(c, COOKIE_NAME, { path: "/" });
   return c.redirect("/login");
+});
+
+// Metaのサーバーがcaption/画像を取得しに来る公開エンドポイントのため認証不要
+app.get("/social/media/:key", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  const post = await getSocialPost(c.env, key);
+  if (!post) return c.notFound();
+
+  if (post.imageR2Key) {
+    const obj = await c.env.MEDIA.get(post.imageR2Key);
+    if (!obj) return c.notFound();
+    return new Response(obj.body, {
+      headers: { "Content-Type": obj.httpMetadata?.contentType ?? "application/octet-stream" },
+    });
+  }
+
+  if (!post.cardHeadline) return c.notFound();
+  try {
+    const jpeg = await generateCardImage(c.env.ASSETS, post.cardHeadline);
+    return new Response(jpeg, { headers: { "Content-Type": "image/jpeg" } });
+  } catch (err) {
+    return c.text((err as Error).message, 500);
+  }
 });
 
 // 以降のルートは認証必須
@@ -499,6 +544,91 @@ app.post("/inquiries/:key/delete", async (c) => {
   return c.redirect("/inquiries");
 });
 
+app.get("/social", async (c) => {
+  const [posts, { unreadCount, overdueCount }] = await Promise.all([
+    listSocialPosts(c.env),
+    getNavCounts(c.env),
+  ]);
+  return c.html(socialListPage({ posts, unreadCount, overdueCount }));
+});
+
+app.get("/social/new", async (c) => {
+  const { unreadCount, overdueCount } = await getNavCounts(c.env);
+  return c.html(socialFormPage({ unreadCount, overdueCount }));
+});
+
+app.post("/social/new", async (c) => {
+  const body = await c.req.parseBody({ all: true });
+  const { unreadCount, overdueCount } = await getNavCounts(c.env);
+  const parsed = await parseSocialForm(c.env, body, undefined);
+  if ("error" in parsed) {
+    return c.html(
+      socialFormPage({ unreadCount, overdueCount, message: { type: "error", text: parsed.error } }),
+      400
+    );
+  }
+  await createSocialPost(c.env, {
+    ...parsed.value,
+    id: crypto.randomUUID(),
+    status: "scheduled",
+    results: [],
+    createdAt: Date.now(),
+  });
+  return c.redirect("/social");
+});
+
+app.get("/social/:key/edit", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  const [post, { unreadCount, overdueCount }] = await Promise.all([
+    getSocialPost(c.env, key),
+    getNavCounts(c.env),
+  ]);
+  if (!post) return c.redirect("/social");
+  return c.html(socialFormPage({ post, unreadCount, overdueCount }));
+});
+
+app.post("/social/:key", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  const existing = await getSocialPost(c.env, key);
+  if (!existing) return c.redirect("/social");
+
+  const body = await c.req.parseBody({ all: true });
+  const { unreadCount, overdueCount } = await getNavCounts(c.env);
+  const parsed = await parseSocialForm(c.env, body, existing);
+  if ("error" in parsed) {
+    return c.html(
+      socialFormPage({
+        post: existing,
+        unreadCount,
+        overdueCount,
+        message: { type: "error", text: parsed.error },
+      }),
+      400
+    );
+  }
+  await putSocialPost(c.env, { ...existing, ...parsed.value });
+  return c.redirect("/social");
+});
+
+app.post("/social/:key/delete", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  const existing = await getSocialPost(c.env, key);
+  if (existing?.imageR2Key) {
+    await c.env.MEDIA.delete(existing.imageR2Key);
+  }
+  await deleteSocialPost(c.env, key);
+  return c.redirect("/social");
+});
+
+app.post("/social/:key/publish-now", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  const post = await getSocialPost(c.env, key);
+  if (post && (post.status === "scheduled" || post.status === "failed")) {
+    await publishDueSocialPost(c.env, post);
+  }
+  return c.redirect("/social");
+});
+
 async function listInquiries(env: Bindings): Promise<Inquiry[]> {
   const { keys } = await env.DATA.list({ prefix: "inquiry:" });
   const values = await Promise.all(
@@ -512,6 +642,89 @@ async function listInquiries(env: Bindings): Promise<Inquiry[]> {
   return values
     .filter((v): v is Inquiry => v !== null)
     .sort((a, b) => b.receivedAt - a.receivedAt);
+}
+
+async function getNavCounts(env: Bindings): Promise<{ unreadCount: number; overdueCount: number }> {
+  const [orders, unreadCount] = await Promise.all([listOrders(env), getUnreadCount(env)]);
+  const revenue = computeRevenue(orders);
+  return { unreadCount, overdueCount: revenue.overdueCount };
+}
+
+// JSTの日付時刻ローカル入力("YYYY-MM-DDTHH:mm")をJSTとして解釈しUTC epoch msへ変換する
+function parseDatetimeLocalAsJst(value: string): number {
+  return new Date(`${value}:00+09:00`).getTime();
+}
+
+type SocialFormResult =
+  | { value: Omit<SocialPost, "key" | "id" | "status" | "results" | "createdAt"> }
+  | { error: string };
+
+async function parseSocialForm(
+  env: Bindings,
+  body: Record<string, string | File | (string | File)[]>,
+  existing: SocialPost | undefined
+): Promise<SocialFormResult> {
+  const rawPlatforms = body.platforms;
+  const platforms = (Array.isArray(rawPlatforms) ? rawPlatforms : rawPlatforms ? [rawPlatforms] : [])
+    .map(String)
+    .filter((p): p is SocialPlatform => (SOCIAL_PLATFORMS as readonly string[]).includes(p));
+
+  if (platforms.length === 0) {
+    return { error: "投稿先を1つ以上選択してください。" };
+  }
+
+  const caption = String(body.caption ?? "").trim();
+  if (!caption) {
+    return { error: "キャプションを入力してください。" };
+  }
+
+  const cardHeadline = String(body.cardHeadline ?? "").trim();
+  const scheduledAtRaw = String(body.scheduledAt ?? "").trim();
+  if (!scheduledAtRaw) {
+    return { error: "投稿日時を指定してください。" };
+  }
+  const scheduledAt = parseDatetimeLocalAsJst(scheduledAtRaw);
+  if (Number.isNaN(scheduledAt)) {
+    return { error: "投稿日時の形式が正しくありません。" };
+  }
+
+  let imageR2Key = existing?.imageR2Key ?? "";
+  const photo = body.photo;
+  if (photo instanceof File && photo.size > 0) {
+    const newKey = `social-media/${crypto.randomUUID()}`;
+    await env.MEDIA.put(newKey, await photo.arrayBuffer(), {
+      httpMetadata: { contentType: photo.type || "image/jpeg" },
+    });
+    if (existing?.imageR2Key) {
+      await env.MEDIA.delete(existing.imageR2Key);
+    }
+    imageR2Key = newKey;
+  }
+
+  if (platforms.includes("instagram") && !imageR2Key && !cardHeadline) {
+    return {
+      error: "Instagramへの投稿には画像が必須です。写真をアップロードするか、カード見出しを入力してください。",
+    };
+  }
+
+  return {
+    value: { platforms, caption, cardHeadline, imageR2Key, scheduledAt },
+  };
+}
+
+async function publishDueSocialPost(env: Bindings, post: SocialPost): Promise<void> {
+  const creds = await getMetaCredentials(env);
+  const imageUrl = `${PUBLIC_ADMIN_URL}/social/media/${encodeURIComponent(post.key)}`;
+  const results = await publishSocialPost(creds, post.platforms, {
+    caption: post.caption,
+    imageUrl,
+  });
+  const allSucceeded = results.every((r) => r.success);
+  await putSocialPost(env, {
+    ...post,
+    status: allSucceeded ? "published" : "failed",
+    results,
+  });
 }
 
 async function saveContentAndRedisplay(
@@ -543,4 +756,16 @@ async function saveContentAndRedisplay(
   }
 }
 
-export default app;
+async function scheduled(_event: ScheduledEvent, env: Bindings, ctx: ExecutionContext): Promise<void> {
+  ctx.waitUntil(refreshMetaTokensIfNeeded(env));
+
+  const duePosts = await listDueSocialPosts(env, Date.now());
+  for (const post of duePosts) {
+    await publishDueSocialPost(env, post);
+  }
+}
+
+export default {
+  fetch: app.fetch,
+  scheduled,
+};

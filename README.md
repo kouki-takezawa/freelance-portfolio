@@ -37,6 +37,20 @@ npm install
 npm run dev
 ```
 
+### SNS投稿予約(Instagram / Threads 自動投稿)
+
+管理画面の「SNS投稿」からキャプション・写真・予約日時を登録しておくと、15分おきのCron Triggerが期限の来た投稿をMeta公式API(Instagram Graph API / Threads API)経由で自動公開する。写真を添付しなかった場合は、入力した見出しからブランドカラーのカード画像(Satori + resvg + MozJPEG、フォントはWorkers Assetsから配信)を自動生成してInstagramの画像必須要件を満たす。
+
+初回のみ以下の手作業が必要:
+
+1. **R2バケットの作成**: `wrangler login` 後、`cd admin && wrangler r2 bucket create freelance-hp-social-media`(手動アップロード写真の保存先)
+2. **Meta Developerアプリの用意**: [developers.facebook.com](https://developers.facebook.com/)でアプリを作成し、Instagram/Threadsのプロダクトを追加。自分のアカウントをテスター登録し、長期アクセストークンとユーザーIDを発行する(Meta側の画面が変わりやすいため、実施時に手順を確認しながら進める)
+3. **GitHub Secretsへの登録**: リポジトリのSecretsに `META_IG_ACCESS_TOKEN` / `META_IG_USER_ID` / `META_THREADS_ACCESS_TOKEN` / `META_THREADS_USER_ID` を追加する([.github/workflows/deploy-admin.yml](.github/workflows/deploy-admin.yml)が自動でWorker Secretとして反映する)
+
+アクセストークンは60日で失効するため、Cronが1日1回自動でリフレッシュし、更新後の値はKVに保存される(GitHub Secrets側の値は初回シードとしてのみ使われる)。
+
+フォロー・いいね・コメントなど他アカウントへのエンゲージメントは、Meta APIでの自動化がプラットフォーム規約違反(アカウント凍結リスク)にあたるため意図的に実装していない。
+
 ## 未確定・要対応のTODO
 
 - `src/lib/site.ts`: 屋号が決まったら `siteName` / `siteNameShort` を差し替え。問い合わせ受信用メールアドレス(`email`)も設定。独自ドメインを取得したら`siteUrl`も更新

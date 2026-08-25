@@ -3,6 +3,8 @@ import {
   ORDER_STATUSES,
   PAYMENT_STATUSES,
   SEO_PAGES,
+  SOCIAL_PLATFORMS,
+  SOCIAL_PLATFORM_LABELS,
   SPARE_BLOG_ROWS,
   SPARE_SERVICES_ROWS,
   SPARE_WORKS_ROWS,
@@ -11,6 +13,8 @@ import {
   type Order,
   type ServiceMenu,
   type SeoMap,
+  type SocialPlatform,
+  type SocialPost,
   type WorkCase,
 } from "./types";
 import type { AnalyticsSummary } from "./analytics";
@@ -186,7 +190,28 @@ const baseStyle = `
   .status-キャンセル { background: #fdecea; color: #b3261e; text-decoration: line-through; }
   .status-未入金 { background: #fdf3e0; color: #a3660a; }
   .status-入金済み { background: #e6f4ea; color: #1e7a34; }
+  .status-scheduled { background: #e4edf9; color: #1e3a5f; }
+  .status-published { background: #e6f4ea; color: #1e7a34; }
+  .status-failed { background: #fdecea; color: #b3261e; }
+  .status-canceled { background: #eef1f5; color: #5b6472; }
   .overdue { color: #b3261e; font-weight: 700; }
+  .platform-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #eef1f5;
+    color: #1e3a5f;
+    margin-right: 4px;
+  }
+  .social-card { background: #fff; border: 1px solid #e4e7ec; border-radius: 12px; padding: 18px; margin-bottom: 14px; }
+  .social-card .social-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; color: #5b6472; margin-bottom: 8px; }
+  .social-card .social-caption { white-space: pre-wrap; font-size: 14px; margin: 10px 0; }
+  .social-card .social-error { color: #b3261e; font-size: 13px; margin-top: 6px; }
+  .social-card .social-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .file-hint { font-size: 12px; color: #5b6472; margin-top: 4px; }
+  .thumb { max-width: 160px; border-radius: 8px; margin-top: 8px; display: block; }
   .revenue-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 24px 0; }
   .revenue-cards .card .num { font-size: 24px; }
   .add-bar { margin-top: 16px; margin-bottom: 20px; }
@@ -322,7 +347,8 @@ type NavKey =
   | "works"
   | "services"
   | "blog"
-  | "seo";
+  | "seo"
+  | "social";
 
 const NAV_SECTIONS: {
   label: string;
@@ -346,6 +372,10 @@ const NAV_SECTIONS: {
       { key: "blog", href: "/blog", label: "お知らせ" },
       { key: "seo", href: "/seo", label: "SEO" },
     ],
+  },
+  {
+    label: "SNS投稿",
+    items: [{ key: "social", href: "/social", label: "投稿予約" }],
   },
 ];
 
@@ -704,6 +734,156 @@ export function inquiriesPage(data: {
     ${list}
   `;
   return shell({ title: "お問い合わせ", active: "inquiries", unreadCount: data.unreadCount, content });
+}
+
+const SOCIAL_STATUS_LABELS: Record<string, string> = {
+  scheduled: "予約済み",
+  published: "投稿済み",
+  failed: "失敗",
+  canceled: "キャンセル",
+};
+
+function platformBadges(platforms: SocialPlatform[]): string {
+  return platforms
+    .map((p) => `<span class="platform-badge">${esc(SOCIAL_PLATFORM_LABELS[p])}</span>`)
+    .join("");
+}
+
+// datetime-local inputへ渡すため、絶対時刻をJSTの壁時計表記に変換する
+function toDatetimeLocalJst(ms: number): string {
+  const jst = new Date(ms + 9 * 60 * 60 * 1000);
+  return jst.toISOString().slice(0, 16);
+}
+
+export function socialListPage(data: {
+  posts: SocialPost[];
+  unreadCount: number;
+  overdueCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const list =
+    data.posts.length === 0
+      ? `<p class="hint">まだSNS投稿の予約がありません。「新規投稿を作成」から追加してください。</p>`
+      : data.posts
+          .map((p) => {
+            const canEdit = p.status === "scheduled" || p.status === "failed";
+            const errors = p.results
+              .filter((r) => !r.success)
+              .map((r) => `${esc(SOCIAL_PLATFORM_LABELS[r.platform])}: ${esc(r.error)}`)
+              .join(" / ");
+            return `
+        <div class="social-card">
+          <div class="social-meta">
+            <span>${formatDate(p.scheduledAt)}</span>
+            ${platformBadges(p.platforms)}
+            <span class="status-pill status-${p.status}">${esc(SOCIAL_STATUS_LABELS[p.status] ?? p.status)}</span>
+          </div>
+          <div class="social-caption">${esc(p.caption)}</div>
+          ${errors ? `<div class="social-error">${errors}</div>` : ""}
+          <div class="social-actions">
+            ${
+              canEdit
+                ? `<a href="/social/${encodeURIComponent(p.key)}/edit" class="small" style="text-decoration:none;display:inline-block;padding:5px 14px;border:1px solid #1e3a5f;border-radius:999px;color:#1e3a5f;font-size:12px;font-weight:700">編集</a>`
+                : ""
+            }
+            ${
+              canEdit
+                ? `<form method="post" action="/social/${encodeURIComponent(p.key)}/publish-now" onsubmit="return confirm('今すぐ投稿しますか？');">
+                <button class="small" type="submit">今すぐ投稿</button>
+              </form>`
+                : ""
+            }
+            <form method="post" action="/social/${encodeURIComponent(p.key)}/delete" onsubmit="return confirm('この投稿を削除しますか？');">
+              <button class="small" type="submit" style="color:#b3261e;border-color:#b3261e">削除</button>
+            </form>
+          </div>
+        </div>
+      `;
+          })
+          .join("");
+
+  const content = `
+    <h1>SNS投稿予約</h1>
+    <h2>Instagram・Threadsへ自動投稿する予約を管理します</h2>
+    ${banner(data.message)}
+    <div class="add-bar">
+      <a href="/social/new" class="primary" style="text-decoration:none;display:inline-block;border-radius:999px;padding:10px 28px;font-size:14px;font-weight:700;background:#1e3a5f;color:#fff">+ 新規投稿を作成</a>
+    </div>
+    ${list}
+  `;
+  return shell({
+    title: "SNS投稿予約",
+    active: "social",
+    unreadCount: data.unreadCount,
+    overdueCount: data.overdueCount,
+    content,
+  });
+}
+
+export function socialFormPage(data: {
+  post?: SocialPost;
+  unreadCount: number;
+  overdueCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const p = data.post;
+  const action = p ? `/social/${encodeURIComponent(p.key)}` : "/social/new";
+  const scheduledAtValue = p ? toDatetimeLocalJst(p.scheduledAt) : "";
+
+  const platformCheckboxes = SOCIAL_PLATFORMS.map(
+    (platform) => `
+    <div class="checkbox-row">
+      <input type="checkbox" id="platform_${platform}" name="platforms" value="${platform}" ${p?.platforms.includes(platform) ? "checked" : ""} />
+      <label for="platform_${platform}" style="margin:0">${esc(SOCIAL_PLATFORM_LABELS[platform])}</label>
+    </div>
+  `
+  ).join("");
+
+  const content = `
+    <h1>${p ? "投稿を編集" : "投稿を新規作成"}</h1>
+    <h2>予約時刻になると自動でInstagram/Threadsへ公開されます</h2>
+    ${banner(data.message)}
+    <form method="post" action="${action}" enctype="multipart/form-data">
+      <fieldset>
+        <legend>投稿先</legend>
+        ${platformCheckboxes}
+      </fieldset>
+
+      <fieldset>
+        <legend>本文</legend>
+        <label>キャプション</label>
+        <textarea name="caption" style="min-height:140px" required>${esc(p?.caption)}</textarea>
+      </fieldset>
+
+      <fieldset>
+        <legend>画像</legend>
+        ${p?.imageR2Key ? `<img class="thumb" src="/social/media/${encodeURIComponent(p.key)}" alt="アップロード済みの写真" />` : ""}
+        <label>写真をアップロード${p?.imageR2Key ? "(差し替える場合のみ選択)" : ""}</label>
+        <input type="file" name="photo" accept="image/*" />
+        <p class="file-hint">Instagramへの投稿には画像が必須です。写真が無い場合は下の見出しからカード画像を自動生成します。</p>
+        <label>自動生成カードの見出し(写真が無い場合に使用)</label>
+        <input type="text" name="cardHeadline" value="${esc(p?.cardHeadline)}" placeholder="例: 無料相談受付中" />
+      </fieldset>
+
+      <fieldset>
+        <legend>予約日時</legend>
+        <label>投稿日時</label>
+        <input type="datetime-local" name="scheduledAt" value="${esc(scheduledAtValue)}" required />
+      </fieldset>
+
+      <div class="save-bar">
+        <button class="primary" type="submit">保存する</button>
+        <a href="/social" style="margin-left:12px;font-size:13px;color:#5b6472">キャンセルして戻る</a>
+      </div>
+    </form>
+  `;
+  return shell({
+    title: p ? "投稿を編集" : "投稿を新規作成",
+    active: "social",
+    unreadCount: data.unreadCount,
+    overdueCount: data.overdueCount,
+    content,
+  });
 }
 
 function isOverdue(order: Order): boolean {
