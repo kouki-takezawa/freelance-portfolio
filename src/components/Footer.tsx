@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { siteConfig } from "@/lib/site";
 import LineButton from "@/components/LineButton";
+import SocialIcons from "@/components/SocialIcons";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -21,6 +22,10 @@ export default function Footer() {
             <p className="text-xs font-semibold text-foreground/70">最新情報・お問い合わせはLINEでも</p>
             <div className="mt-3">
               <LineButton />
+            </div>
+            <p className="mt-4 text-xs font-semibold text-foreground/70">SNSでも発信中</p>
+            <div className="mt-3">
+              <SocialIcons />
             </div>
           </div>
         </div>
