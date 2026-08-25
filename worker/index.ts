@@ -34,7 +34,8 @@ async function handleContact(request: Request, env: Env): Promise<Response> {
       message: data.message,
       receivedAt,
       read: false,
-    })
+    }),
+    { metadata: { read: false } }
   );
 
   return Response.json({ ok: true });

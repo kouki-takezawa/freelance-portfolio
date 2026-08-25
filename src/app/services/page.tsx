@@ -94,25 +94,29 @@ export default function ServicesPage() {
         <p className="mt-2 text-sm text-muted">
           仲介会社を挟まず直接ご依頼いただくことで、価格と柔軟さの両方を実現しています。
         </p>
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-border">
-          <table className="w-full min-w-[480px] border-collapse text-sm">
-            <thead>
-              <tr className="bg-surface text-left">
-                <th className="p-4 font-semibold text-foreground/70">比較項目</th>
-                <th className="p-4 font-semibold text-foreground/70">一般的な制作会社</th>
-                <th className="p-4 font-semibold text-accent">ヨリソイワークス</th>
-              </tr>
-            </thead>
-            <tbody>
-              {comparisonRows.map((row) => (
-                <tr key={row.label} className="border-t border-border">
-                  <td className="p-4 font-semibold">{row.label}</td>
-                  <td className="p-4 text-muted">{row.others}</td>
-                  <td className="p-4 font-semibold text-accent">{row.us}</td>
+        <p className="mt-4 text-xs text-muted sm:hidden">← 横にスクロールして全体を確認できます</p>
+        <div className="relative mt-2 sm:mt-6">
+          <div className="overflow-x-auto rounded-2xl border border-border">
+            <table className="w-full min-w-[480px] border-collapse text-sm">
+              <thead>
+                <tr className="bg-surface text-left">
+                  <th className="p-4 font-semibold text-foreground/70">比較項目</th>
+                  <th className="p-4 font-semibold text-foreground/70">一般的な制作会社</th>
+                  <th className="p-4 font-semibold text-accent">ヨリソイワークス</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {comparisonRows.map((row) => (
+                  <tr key={row.label} className="border-t border-border">
+                    <td className="p-4 font-semibold">{row.label}</td>
+                    <td className="p-4 text-muted">{row.others}</td>
+                    <td className="p-4 font-semibold text-accent">{row.us}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 rounded-r-2xl bg-gradient-to-l from-background to-transparent sm:hidden" />
         </div>
       </div>
 
