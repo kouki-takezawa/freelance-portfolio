@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   description: seo.description,
 };
 
-// TODO: 実際の経歴・スキルに合わせて内容を調整してください
 const skills = [
   "Next.js / React",
   "TypeScript",
@@ -55,12 +54,11 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* TODO: 実際の経歴・エピソードに差し替えてください */}
       <p className="mt-8 text-sm leading-relaxed text-muted sm:text-base">
         小さな会社や個人事業主の方ほど、「ホームページを作りたいけれど、何から頼めばいいかわからない」「大手の制作会社は敷居が高い」と感じやすいのではないでしょうか。ヨリソイワークスは、そうした事業者様に寄り添い、必要なものを必要な分だけ形にすることを大切にしています。
       </p>
       <p className="mt-4 text-sm leading-relaxed text-muted sm:text-base">
-        Web制作会社での実務経験を通じて、大きな組織では小回りの利きにくい「小規模事業者向けの、ちょうどいい規模の制作」に価値があると感じ、直接ご依頼いただける体制でサービスを提供しています。
+        IT業界でWebアプリケーションやホームページ制作に携わってきた経験を活かし、企画から設計、実装まで一貫して対応できることが強みです。組織の中で培った技術力を、直接顔の見える形で小規模事業者様にお届けしたいという思いから、このサービスを始めました。
       </p>
 
       <h2 className="mt-12 text-lg font-bold">対応技術</h2>
