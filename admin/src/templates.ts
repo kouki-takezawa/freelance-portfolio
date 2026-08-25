@@ -11,6 +11,7 @@ import {
   type Order,
   type ServiceMenu,
   type SeoMap,
+  type SocialCalendarEntry,
   type WorkCase,
 } from "./types";
 import type { AnalyticsSummary } from "./analytics";
@@ -187,6 +188,15 @@ const baseStyle = `
   .status-未入金 { background: #fdf3e0; color: #a3660a; }
   .status-入金済み { background: #e6f4ea; color: #1e7a34; }
   .overdue { color: #b3261e; font-weight: 700; }
+  .status-posted { background: #e6f4ea; color: #1e7a34; }
+  .status-not-posted { background: #eef1f5; color: #5b6472; }
+  .calendar-card { display: flex; gap: 16px; background: #fff; border: 1px solid #e4e7ec; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .calendar-card img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+  .calendar-card .calendar-body { flex: 1; min-width: 0; }
+  .calendar-card .calendar-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: #5b6472; margin-bottom: 6px; }
+  .calendar-card .calendar-caption { font-size: 13px; color: #171923; margin: 4px 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .calendar-card .calendar-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .calendar-image-large { width: 100%; max-width: 320px; border-radius: 12px; display: block; margin-bottom: 12px; }
   .revenue-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 24px 0; }
   .revenue-cards .card .num { font-size: 24px; }
   .add-bar { margin-top: 16px; margin-bottom: 20px; }
@@ -322,7 +332,8 @@ type NavKey =
   | "works"
   | "services"
   | "blog"
-  | "seo";
+  | "seo"
+  | "social-calendar";
 
 const NAV_SECTIONS: {
   label: string;
@@ -346,6 +357,10 @@ const NAV_SECTIONS: {
       { key: "blog", href: "/blog", label: "お知らせ" },
       { key: "seo", href: "/seo", label: "SEO" },
     ],
+  },
+  {
+    label: "SNS投稿",
+    items: [{ key: "social-calendar", href: "/social-calendar", label: "投稿カレンダー" }],
   },
 ];
 
@@ -704,6 +719,91 @@ export function inquiriesPage(data: {
     ${list}
   `;
   return shell({ title: "お問い合わせ", active: "inquiries", unreadCount: data.unreadCount, content });
+}
+
+function calendarImageUrl(e: SocialCalendarEntry): string {
+  const params = new URLSearchParams({ h: e.cardHeadline, c: e.category });
+  return `/social-calendar/image/${e.day}?${params.toString()}`;
+}
+
+export function socialCalendarListPage(data: {
+  entries: SocialCalendarEntry[];
+  unreadCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const sorted = [...data.entries].sort((a, b) => a.day - b.day);
+  const postedCount = sorted.filter((e) => e.posted).length;
+
+  const list =
+    sorted.length === 0
+      ? `<p class="hint">投稿カレンダーがまだありません。</p>`
+      : sorted
+          .map(
+            (e) => `
+        <div class="calendar-card">
+          <img src="${calendarImageUrl(e)}" alt="${esc(e.cardHeadline)}" loading="lazy" />
+          <div class="calendar-body">
+            <div class="calendar-meta">
+              <strong>Day ${e.day}</strong>
+              <span class="platform-badge">${esc(e.category)}</span>
+              <span class="status-pill ${e.posted ? "status-posted" : "status-not-posted"}">${e.posted ? "投稿済み" : "未投稿"}</span>
+            </div>
+            <div class="calendar-caption">${esc(e.caption)}</div>
+            <div class="calendar-actions">
+              <a href="/social-calendar/${e.day}/edit" class="small" style="text-decoration:none;display:inline-block;padding:5px 14px;border:1px solid #1e3a5f;border-radius:999px;color:#1e3a5f;font-size:12px;font-weight:700">編集</a>
+              <form method="post" action="/social-calendar/${e.day}/toggle-posted">
+                <button class="small" type="submit">${e.posted ? "未投稿にもどす" : "投稿済みにする"}</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      `
+          )
+          .join("");
+
+  const content = `
+    <h1>投稿カレンダー</h1>
+    <h2>Instagram/Threads用に用意した1ヶ月分の投稿案です(${postedCount}/${sorted.length}件 投稿済み)。キャプションをコピーし、画像を保存して手動で投稿してください。</h2>
+    ${banner(data.message)}
+    ${list}
+  `;
+  return shell({ title: "投稿カレンダー", active: "social-calendar", unreadCount: data.unreadCount, content });
+}
+
+export function socialCalendarFormPage(data: {
+  entry: SocialCalendarEntry;
+  unreadCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const e = data.entry;
+  const content = `
+    <h1>Day ${e.day} を編集</h1>
+    <h2>キャプションや見出しを直接編集できます</h2>
+    ${banner(data.message)}
+    <img class="calendar-image-large" src="${calendarImageUrl(e)}" alt="${esc(e.cardHeadline)}" />
+    <form method="post" action="/social-calendar/${e.day}">
+      <fieldset>
+        <label>カテゴリ</label>
+        <input type="text" name="category" value="${esc(e.category)}" />
+
+        <label>カード画像の見出し(短い見出し。改行したい箇所は改行してください)</label>
+        <textarea name="cardHeadline" style="min-height:70px">${esc(e.cardHeadline)}</textarea>
+
+        <label>キャプション本文</label>
+        <textarea name="caption" style="min-height:160px">${esc(e.caption)}</textarea>
+
+        <div class="checkbox-row">
+          <input type="checkbox" id="posted" name="posted" ${e.posted ? "checked" : ""} />
+          <label for="posted" style="margin:0">投稿済みとしてマークする</label>
+        </div>
+      </fieldset>
+      <div class="save-bar">
+        <button class="primary" type="submit">保存する</button>
+        <a href="/social-calendar" style="margin-left:12px;font-size:13px;color:#5b6472">キャンセルして戻る</a>
+      </div>
+    </form>
+  `;
+  return shell({ title: `Day ${e.day}`, active: "social-calendar", unreadCount: data.unreadCount, content });
 }
 
 function isOverdue(order: Order): boolean {
