@@ -16,6 +16,17 @@ npm run build     # 静的サイトを out/ に出力
 
 コンテンツ(実績・料金・SEO)は `content/*.json` を読み込んで表示している。直接編集してpushしてもよいし、下記の管理画面から編集してもよい(どちらも同じファイルを更新する)。
 
+### お問い合わせ通知メール
+
+`worker/index.ts` の `/api/contact` はお問い合わせをKV(`DATA`)に保存したうえで、[Resend](https://resend.com) 経由で `takechin001031@icloud.com` 宛に通知メールを送る(`RESEND_API_KEY` が未設定の場合は送信をスキップし、KV保存のみ行う)。
+
+```bash
+npx wrangler login
+npx wrangler secret put RESEND_API_KEY
+```
+
+独自ドメイン未取得のため送信元は Resend のサンドボックスドメイン(`onboarding@resend.dev`)を使用している。この場合Resendの制限により、送信先はResendアカウント登録メールアドレスと一致している必要がある。独自ドメインを取得し[Resendでドメイン認証](https://resend.com/docs/dashboard/domains/introduction)すれば、任意の送信元・送信先に変更できる。
+
 ## 管理者側画面
 
 **https://freelance-hp-admin.yorisoi-works.workers.dev**
@@ -39,8 +50,8 @@ npm run dev
 
 ## 未確定・要対応のTODO
 
-- `src/lib/site.ts`: 屋号が決まったら `siteName` / `siteNameShort` を差し替え。問い合わせ受信用メールアドレス(`email`)も設定。独自ドメインを取得したら`siteUrl`も更新
-- `functions/api/contact.js`: 現状はログ出力のみの仮実装。送信先メールが決まったらResend等のメールAPI連携を実装
+- `src/lib/site.ts`: 屋号が決まったら `siteName` / `siteNameShort` を差し替え。独自ドメインを取得したら`siteUrl`も更新
+- お問い合わせ通知メール: `RESEND_API_KEY` シークレットを未設定のため、Cloudflareに設定するまで実際のメール送信は行われない(下記「お問い合わせ通知メール」参照)
 
 ## デプロイ (Cloudflare)
 
