@@ -21,7 +21,7 @@ export default function ContactPage() {
         お問い合わせ
       </h1>
       <p className="mt-4 text-sm leading-relaxed text-muted sm:text-base">
-        HP制作・LP制作・システム/Webアプリ開発について、ご相談・お見積りは無料です。「何から頼めばいいかわからない」という段階でも構いませんので、以下のフォームよりお気軽にご連絡ください。2営業日以内を目安にご返信します。
+        HP制作・LP制作・システム/Webアプリ開発・LINE公式アカウント構築について、ご相談・お見積りは無料です。「何から頼めばいいかわからない」という段階でも構いませんので、以下のフォームよりお気軽にご連絡ください。2営業日以内を目安にご返信します。
       </p>
 
       <div className="mt-6 flex items-center gap-3 rounded-2xl border border-border bg-surface p-4">

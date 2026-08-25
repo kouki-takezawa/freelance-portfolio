@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-type ServiceType = "hp" | "lp" | "system";
+type ServiceType = "hp" | "lp" | "system" | "line";
 
 type Option = {
   id: string;
@@ -20,7 +20,7 @@ const SERVICES: {
   {
     type: "hp",
     label: "HP制作",
-    base: 150000,
+    base: 100000,
     options: [
       { id: "hp-blog", label: "お知らせ・ブログ機能を追加したい", price: 50000 },
       { id: "hp-pages", label: "6ページ以上の追加ページが必要", price: 30000 },
@@ -31,7 +31,7 @@ const SERVICES: {
   {
     type: "lp",
     label: "LP制作",
-    base: 100000,
+    base: 70000,
     options: [
       { id: "lp-animation", label: "アニメーション演出を入れたい", price: 30000 },
       { id: "lp-ab", label: "複数パターンでABテストしたい", price: 40000 },
@@ -48,6 +48,16 @@ const SERVICES: {
       { id: "sys-integration", label: "外部サービス(決済・LINE等)と連携したい", price: 60000 },
     ],
   },
+  {
+    type: "line",
+    label: "LINE公式アカウント構築",
+    base: 30000,
+    options: [
+      { id: "line-richmenu", label: "リッチメニューのデザイン作成", price: 15000 },
+      { id: "line-autoreply", label: "自動応答メッセージの設定", price: 20000 },
+      { id: "line-step", label: "ステップ配信(順次配信)の設定", price: 30000 },
+    ],
+  },
 ];
 
 function formatYen(n: number): string {
@@ -58,6 +68,7 @@ const INQUIRY_TYPE_LABEL: Record<ServiceType, string> = {
   hp: "HP制作",
   lp: "LP制作",
   system: "システム・Webアプリ開発",
+  line: "LINE公式アカウント構築",
 };
 
 export default function EstimateSimulator() {
@@ -103,7 +114,7 @@ export default function EstimateSimulator() {
     <div className="flex flex-col gap-8">
       <div>
         <p className="text-sm font-semibold">ご依頼内容を選んでください</p>
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {SERVICES.map((s) => (
             <button
               key={s.type}

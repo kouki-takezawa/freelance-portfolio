@@ -18,9 +18,9 @@ const jumpLinks = [
 
 const strengths = [
   {
-    title: "業界相場より抑えた明朗料金",
+    title: "フリーランス相場より抑えた明朗料金",
     description:
-      "システム・Webアプリ開発は5万円から対応可能。必要な機能に絞って小さく始められるので、大きな予算がなくても相談しやすい料金設定です。",
+      "LINE公式アカウント構築は3万円、システム・Webアプリ開発は5万円から対応可能。必要な機能に絞って小さく始められるので、大きな予算がなくても相談しやすい料金設定です。",
   },
   {
     title: "小規模事業者に寄り添う制作",
@@ -28,9 +28,9 @@ const strengths = [
       "大手には頼みにくい、小さな要望や予算感にも柔軟に対応します。何から始めればよいかわからない状態からのご相談も歓迎です。",
   },
   {
-    title: "HP・LPからWebアプリまで一貫対応",
+    title: "HP・LPからWebアプリ・LINE運用まで一貫対応",
     description:
-      "サイト制作だけでなく、予約管理や業務効率化のためのシステム・Webアプリ開発まで、事業の成長段階に合わせて相談できます。",
+      "サイト制作だけでなく、予約管理システムの開発や、集客に役立つLINE公式アカウントの構築まで、事業の成長段階に合わせて相談できます。",
   },
   {
     title: "平日夜間・土日でも連絡可能",
@@ -39,7 +39,7 @@ const strengths = [
   },
 ];
 
-const iconKinds = ["hp", "lp", "system"] as const;
+const iconKinds = ["hp", "lp", "system", "line"] as const;
 
 const processSteps = [
   {
@@ -102,7 +102,7 @@ export default function Home() {
         <div className="mx-auto grid max-w-5xl items-center gap-10 px-6 pt-16 pb-16 sm:pt-24 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-6">
           <div>
             <p className="text-sm font-semibold tracking-wide text-accent">
-              HP制作・LP制作・業務システム/Webアプリ開発
+              HP制作・LP制作・業務システム/Webアプリ開発・LINE公式アカウント構築
             </p>
             <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
               「ホームページが欲しい」を、
@@ -113,6 +113,9 @@ export default function Home() {
               {siteConfig.description}
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
+              <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
+                LINE公式アカウント構築 3万円〜
+              </span>
               <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
                 システム・Webアプリ開発 5万円〜
               </span>
@@ -201,7 +204,7 @@ export default function Home() {
             すべて見る →
           </Link>
         </div>
-        <div className="mt-8 grid gap-6 sm:grid-cols-3">
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {services.map((service, i) => (
             <div
               key={service.slug}

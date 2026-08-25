@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type Kind = "hp" | "lp" | "system";
+type Kind = "hp" | "lp" | "system" | "line";
 
 const paths: Record<Kind, ReactNode> = {
   hp: (
@@ -25,6 +25,14 @@ const paths: Record<Kind, ReactNode> = {
     <>
       <circle cx="12" cy="12" r="3" />
       <path d="M12 3v2.5M12 18.5V21M21 12h-2.5M5.5 12H3M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4L5.6 5.6" />
+    </>
+  ),
+  line: (
+    <>
+      <path d="M21 11.5c0 4.14-4.03 7.5-9 7.5-.83 0-1.63-.09-2.38-.27L5 20l1.02-3.06C4.15 15.5 3 13.6 3 11.5 3 7.36 7.03 4 12 4s9 3.36 9 7.5z" />
+      <circle cx="8.3" cy="11.5" r="0.8" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="11.5" r="0.8" fill="currentColor" stroke="none" />
+      <circle cx="15.7" cy="11.5" r="0.8" fill="currentColor" stroke="none" />
     </>
   ),
 };

@@ -42,6 +42,7 @@ export const ORDER_SERVICE_TYPES = [
   "HP制作",
   "LP制作",
   "システム・Webアプリ開発",
+  "LINE公式アカウント構築",
   "その他",
 ] as const;
 

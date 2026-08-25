@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-const inquiryTypes = ["HP制作", "LP制作", "システム・Webアプリ開発", "その他・不明"];
+const inquiryTypes = ["HP制作", "LP制作", "システム・Webアプリ開発", "LINE公式アカウント構築", "その他・不明"];
 const budgetRanges = [
   "〜10万円",
   "10万円〜30万円",

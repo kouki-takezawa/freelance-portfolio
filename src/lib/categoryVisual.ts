@@ -1,8 +1,11 @@
 export function categoryVisual(category: string): {
-  icon: "hp" | "lp" | "system";
+  icon: "hp" | "lp" | "system" | "line";
   bg: string;
   border: string;
 } {
+  if (category.includes("LINE")) {
+    return { icon: "line", bg: "bg-emerald-50", border: "border-t-emerald-400" };
+  }
   if (category.includes("LP")) {
     return { icon: "lp", bg: "bg-amber-50", border: "border-t-amber-400" };
   }

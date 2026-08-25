@@ -3,9 +3,9 @@ export const siteConfig = {
   siteUrl: "https://freelance-hp.yorisoi-works.workers.dev",
   siteName: "ヨリソイワークス",
   siteNameShort: "ヨリソイワークス",
-  tagline: "小さな会社・個人事業主のためのHP・LP・業務システム開発",
+  tagline: "小さな会社・個人事業主のためのHP・LP・業務システム・LINE公式アカウント構築",
   description:
-    "HP制作、LP制作、Webアプリ・業務システムの開発を、業界相場より抑えた料金で行っています。栃木県を拠点にリモート対応、まずはお気軽にご相談ください。",
+    "HP制作、LP制作、Webアプリ・業務システムの開発、LINE公式アカウント構築を、フリーランス相場より抑えた料金で行っています。栃木県を拠点にリモート対応、まずはお気軽にご相談ください。",
   email: "TODO@example.com", // TODO: 問い合わせ送信先メールアドレスを設定
   lineUrl: "https://lin.ee/TQSTklX",
   webAnalyticsToken: "41c46914ed57468e9603af4704b3119f",

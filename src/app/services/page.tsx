@@ -6,7 +6,7 @@ import ServiceIcon from "@/components/illustrations/ServiceIcon";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
 const seo = getSeo("/services");
-const iconKinds = ["hp", "lp", "system"] as const;
+const iconKinds = ["hp", "lp", "system", "line"] as const;
 
 export const metadata: Metadata = {
   title: seo.title,
