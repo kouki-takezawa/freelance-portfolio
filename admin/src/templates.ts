@@ -30,7 +30,12 @@ const baseStyle = `
   }
   .app { display: flex; min-height: 100vh; }
   aside {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 220px;
+    height: 100vh;
+    overflow-y: auto;
     flex-shrink: 0;
     background: #1e3a5f;
     color: #fff;
@@ -74,7 +79,7 @@ const baseStyle = `
     font-size: 13px;
     margin-top: 8px;
   }
-  main.content { flex: 1; padding: 32px 40px 80px; max-width: 900px; }
+  main.content { flex: 1; margin-left: 220px; padding: 32px 40px 80px; max-width: 900px; }
   h1 { font-size: 22px; margin-top: 0; }
   h2 { font-size: 16px; color: #5b6472; margin-top: 0; }
   fieldset {
@@ -156,12 +161,18 @@ const baseStyle = `
   @media (max-width: 720px) {
     .app { flex-direction: column; }
     aside {
+      position: sticky;
+      top: 0;
+      left: auto;
       width: 100%;
+      height: auto;
+      overflow-y: visible;
       flex-direction: row;
       flex-wrap: wrap;
       align-items: center;
       gap: 4px 12px;
       padding: 12px 16px;
+      z-index: 10;
     }
     aside .brand { padding: 0; border-bottom: none; font-size: 13px; white-space: nowrap; }
     aside nav {
@@ -187,7 +198,7 @@ const baseStyle = `
     aside .footer a { padding: 0; font-size: 12px; }
     aside form { display: inline-block; }
     aside form button { width: auto; margin-top: 0; padding: 6px 10px; font-size: 12px; }
-    main.content { padding: 20px 16px 60px; }
+    main.content { margin-left: 0; padding: 20px 16px 60px; }
     .login-box { margin: 40px auto; max-width: calc(100% - 32px); }
   }
 `;
