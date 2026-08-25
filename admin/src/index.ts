@@ -63,8 +63,10 @@ function slugify(text: string): string {
 }
 
 async function getUnreadCount(env: Bindings): Promise<number> {
-  const { keys } = await env.DATA.list({ prefix: "inquiry:" });
-  return keys.filter((k) => (k.metadata as { read?: boolean } | null)?.read === false).length;
+  // list()のmetadataはKVの結果整合性により削除直後も古い値を返すことがあるため、
+  // 実際の値を取得して判定する(お問い合わせ一覧と同じロジックに揃える)
+  const inquiries = await listInquiries(env);
+  return inquiries.filter((i) => !i.read).length;
 }
 
 const SECURITY_HEADERS: Record<string, string> = {
@@ -167,14 +169,13 @@ app.use("/*", async (c, next) => {
 
 app.get("/", async (c) => {
   try {
-    const [works, services, blog, orders, unreadCount, inquiriesCount, todayPageviews] =
+    const [works, services, blog, orders, inquiries, todayPageviews] =
       await Promise.all([
         getJsonFile<WorkCase[]>(c.env.CONTENT_GITHUB_TOKEN, "content/works.json"),
         getJsonFile<ServiceMenu[]>(c.env.CONTENT_GITHUB_TOKEN, "content/services.json"),
         getJsonFile<BlogPost[]>(c.env.CONTENT_GITHUB_TOKEN, "content/blog.json"),
         listOrders(c.env),
-        getUnreadCount(c.env),
-        c.env.DATA.list({ prefix: "inquiry:" }).then((r) => r.keys.length),
+        listInquiries(c.env),
         getTodayPageviews(c.env.CF_ANALYTICS_TOKEN),
       ]);
     const revenue = computeRevenue(orders);
@@ -183,8 +184,8 @@ app.get("/", async (c) => {
         worksCount: works.value.length,
         servicesCount: services.value.length,
         blogCount: blog.value.length,
-        unreadCount,
-        inquiriesCount,
+        unreadCount: inquiries.filter((i) => !i.read).length,
+        inquiriesCount: inquiries.length,
         thisMonthRevenue: revenue.thisMonthRevenue,
         unpaidTotal: revenue.unpaidTotal,
         inProgressCount: revenue.inProgressCount,
@@ -213,11 +214,19 @@ app.get("/", async (c) => {
 });
 
 app.get("/works", async (c) => {
-  const [works, unreadCount] = await Promise.all([
-    getJsonFile<WorkCase[]>(c.env.CONTENT_GITHUB_TOKEN, "content/works.json"),
-    getUnreadCount(c.env),
-  ]);
-  return c.html(worksPage({ works: works.value, unreadCount }));
+  try {
+    const [works, unreadCount] = await Promise.all([
+      getJsonFile<WorkCase[]>(c.env.CONTENT_GITHUB_TOKEN, "content/works.json"),
+      getUnreadCount(c.env),
+    ]);
+    return c.html(worksPage({ works: works.value, unreadCount }));
+  } catch (err) {
+    const unreadCount = await getUnreadCount(c.env);
+    return c.html(
+      worksPage({ works: [], unreadCount, message: { type: "error", text: (err as Error).message } }),
+      500
+    );
+  }
 });
 
 app.post("/works", async (c) => {
@@ -255,11 +264,23 @@ app.post("/works", async (c) => {
 });
 
 app.get("/services", async (c) => {
-  const [services, unreadCount] = await Promise.all([
-    getJsonFile<ServiceMenu[]>(c.env.CONTENT_GITHUB_TOKEN, "content/services.json"),
-    getUnreadCount(c.env),
-  ]);
-  return c.html(servicesPage({ services: services.value, unreadCount }));
+  try {
+    const [services, unreadCount] = await Promise.all([
+      getJsonFile<ServiceMenu[]>(c.env.CONTENT_GITHUB_TOKEN, "content/services.json"),
+      getUnreadCount(c.env),
+    ]);
+    return c.html(servicesPage({ services: services.value, unreadCount }));
+  } catch (err) {
+    const unreadCount = await getUnreadCount(c.env);
+    return c.html(
+      servicesPage({
+        services: [],
+        unreadCount,
+        message: { type: "error", text: (err as Error).message },
+      }),
+      500
+    );
+  }
 });
 
 app.post("/services", async (c) => {
@@ -297,11 +318,19 @@ app.post("/services", async (c) => {
 });
 
 app.get("/seo", async (c) => {
-  const [seo, unreadCount] = await Promise.all([
-    getJsonFile<SeoMap>(c.env.CONTENT_GITHUB_TOKEN, "content/seo.json"),
-    getUnreadCount(c.env),
-  ]);
-  return c.html(seoPage({ seo: seo.value, unreadCount }));
+  try {
+    const [seo, unreadCount] = await Promise.all([
+      getJsonFile<SeoMap>(c.env.CONTENT_GITHUB_TOKEN, "content/seo.json"),
+      getUnreadCount(c.env),
+    ]);
+    return c.html(seoPage({ seo: seo.value, unreadCount }));
+  } catch (err) {
+    const unreadCount = await getUnreadCount(c.env);
+    return c.html(
+      seoPage({ seo: {}, unreadCount, message: { type: "error", text: (err as Error).message } }),
+      500
+    );
+  }
 });
 
 app.post("/seo", async (c) => {
@@ -327,11 +356,19 @@ app.post("/seo", async (c) => {
 });
 
 app.get("/blog", async (c) => {
-  const [blog, unreadCount] = await Promise.all([
-    getJsonFile<BlogPost[]>(c.env.CONTENT_GITHUB_TOKEN, "content/blog.json"),
-    getUnreadCount(c.env),
-  ]);
-  return c.html(blogPage({ posts: blog.value, unreadCount }));
+  try {
+    const [blog, unreadCount] = await Promise.all([
+      getJsonFile<BlogPost[]>(c.env.CONTENT_GITHUB_TOKEN, "content/blog.json"),
+      getUnreadCount(c.env),
+    ]);
+    return c.html(blogPage({ posts: blog.value, unreadCount }));
+  } catch (err) {
+    const unreadCount = await getUnreadCount(c.env);
+    return c.html(
+      blogPage({ posts: [], unreadCount, message: { type: "error", text: (err as Error).message } }),
+      500
+    );
+  }
 });
 
 app.post("/blog", async (c) => {
