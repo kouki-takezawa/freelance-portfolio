@@ -25,25 +25,24 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-4 border-t border-border pt-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            &copy; {year} {siteConfig.siteName}
-          </p>
-          <nav className="flex flex-wrap gap-x-6 gap-y-2">
-            {siteConfig.navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="transition-colors hover:text-accent"
-              >
-                {link.label}
-              </Link>
-            ))}
-            <Link href="/privacy" className="transition-colors hover:text-accent">
-              プライバシーポリシー
+        <nav className="mt-10 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border pt-8 text-sm text-muted sm:grid-cols-4">
+          {siteConfig.navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="transition-colors hover:text-accent"
+            >
+              {link.label}
             </Link>
-          </nav>
-        </div>
+          ))}
+          <Link href="/privacy" className="transition-colors hover:text-accent">
+            プライバシーポリシー
+          </Link>
+        </nav>
+
+        <p className="mt-8 border-t border-border pt-6 text-xs text-muted">
+          &copy; {year} {siteConfig.siteName}
+        </p>
       </div>
     </footer>
   );
