@@ -39,7 +39,7 @@ export default function WorksPage() {
               className={`overflow-hidden rounded-2xl border border-t-4 border-border ${visual.border}`}
             >
               <div className={`flex h-28 items-center justify-center ${visual.bg} text-accent`}>
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-background/80">
+                <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-background/80">
                   <span className="scale-150">
                     <ServiceIcon kind={visual.icon} />
                   </span>

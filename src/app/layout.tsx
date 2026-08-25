@@ -30,10 +30,30 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  name: siteConfig.siteName,
+  url: siteConfig.siteUrl,
+  description: siteConfig.description,
+  areaServed: "JP",
+  address: {
+    "@type": "PostalAddress",
+    addressRegion: "栃木県",
+    addressCountry: "JP",
+  },
+  sameAs: [siteConfig.lineUrl],
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ja" className={`${notoSansJP.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

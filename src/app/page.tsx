@@ -149,7 +149,7 @@ export default function Home() {
 
       <nav
         aria-label="ページ内ナビゲーション"
-        className="sticky top-[57px] z-40 border-b border-border bg-background/95 backdrop-blur sm:top-[65px]"
+        className="hidden border-b border-border bg-surface sm:block"
       >
         <div className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-6 py-2.5 text-xs font-semibold">
           {jumpLinks.map((link) => (

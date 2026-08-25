@@ -887,6 +887,47 @@ export function revenuePage(data: {
   });
 }
 
+function dailyBarChart(daily: { date: string; count: number }[]): string {
+  if (daily.length === 0) return "";
+
+  const width = 700;
+  const height = 200;
+  const paddingBottom = 28;
+  const paddingTop = 12;
+  const chartHeight = height - paddingBottom - paddingTop;
+  const max = Math.max(1, ...daily.map((d) => d.count));
+  const barGap = 6;
+  const barWidth = (width - barGap * (daily.length - 1)) / daily.length;
+
+  const bars = daily
+    .map((d, i) => {
+      const barHeight = Math.max(Math.round((d.count / max) * chartHeight), d.count > 0 ? 2 : 0);
+      const x = i * (barWidth + barGap);
+      const y = paddingTop + (chartHeight - barHeight);
+      const label = d.date.slice(5).replace("-", "/");
+      return `
+        <rect x="${x.toFixed(1)}" y="${y}" width="${barWidth.toFixed(1)}" height="${barHeight}" rx="3" fill="#1e3a5f">
+          <title>${esc(d.date)}: ${d.count}件</title>
+        </rect>
+        ${
+          d.count > 0
+            ? `<text x="${(x + barWidth / 2).toFixed(1)}" y="${y - 4}" font-size="10" fill="#1e3a5f" text-anchor="middle" font-weight="700">${d.count}</text>`
+            : ""
+        }
+        <text x="${(x + barWidth / 2).toFixed(1)}" y="${height - 8}" font-size="9" fill="#5b6472" text-anchor="middle">${esc(label)}</text>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="table-wrap" style="padding:16px 20px">
+      <svg viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; max-height:220px; display:block" role="img" aria-label="日別ページビュー推移">
+        ${bars}
+      </svg>
+    </div>
+  `;
+}
+
 export function analyticsPage(data: {
   summary: AnalyticsSummary;
   unreadCount: number;
@@ -911,6 +952,9 @@ export function analyticsPage(data: {
           <div class="label">直近30日間</div>
         </div>
       </div>
+
+      <h2 style="margin-top:32px">日別ページビュー(直近14日間)</h2>
+      ${dailyBarChart(summary.dailyCounts)}
 
       <h2 style="margin-top:32px">よく見られているページ(直近30日間)</h2>
       <div class="table-wrap" style="margin-top:12px">

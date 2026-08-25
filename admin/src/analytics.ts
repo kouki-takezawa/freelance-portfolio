@@ -6,6 +6,7 @@ export type AnalyticsSummary = {
   last7Days: number;
   last30Days: number;
   topPages: { path: string; count: number }[];
+  dailyCounts: { date: string; count: number }[];
   available: boolean;
   errorMessage?: string;
 };
@@ -70,6 +71,14 @@ export async function getTodayPageviews(token: string): Promise<number> {
   }
 }
 
+function jstDateLabel(daysAgo: number): string {
+  const iso = jstMidnightUtcIso(daysAgo);
+  const jst = new Date(new Date(iso).getTime() + 9 * 60 * 60 * 1000);
+  return jst.toISOString().slice(0, 10);
+}
+
+const DAILY_CHART_DAYS = 14;
+
 export async function getAnalyticsSummary(token: string): Promise<AnalyticsSummary> {
   const now = new Date().toISOString();
   const empty: AnalyticsSummary = {
@@ -77,6 +86,7 @@ export async function getAnalyticsSummary(token: string): Promise<AnalyticsSumma
     last7Days: 0,
     last30Days: 0,
     topPages: [],
+    dailyCounts: [],
     available: false,
   };
 
@@ -85,7 +95,7 @@ export async function getAnalyticsSummary(token: string): Promise<AnalyticsSumma
   }
 
   try {
-    const [todayData, week, month, topPagesData] = await Promise.all([
+    const [todayData, week, month, topPagesData, dailyData] = await Promise.all([
       graphql(token, rangeQuery(jstMidnightUtcIso(0), now)),
       graphql(token, rangeQuery(jstMidnightUtcIso(6), now)),
       graphql(token, rangeQuery(jstMidnightUtcIso(29), now)),
@@ -101,6 +111,23 @@ export async function getAnalyticsSummary(token: string): Promise<AnalyticsSumma
               ) {
                 count
                 dimensions { requestPath }
+              }
+            }
+          }
+        }`
+      ),
+      graphql(
+        token,
+        `query {
+          viewer {
+            accounts(filter: { accountTag: "${ACCOUNT_ID}" }) {
+              rumPageloadEventsAdaptiveGroups(
+                limit: ${DAILY_CHART_DAYS}
+                orderBy: [date_ASC]
+                filter: { datetime_geq: "${jstMidnightUtcIso(DAILY_CHART_DAYS - 1)}", datetime_leq: "${now}" }
+              ) {
+                count
+                dimensions { date }
               }
             }
           }
@@ -122,11 +149,32 @@ export async function getAnalyticsSummary(token: string): Promise<AnalyticsSumma
       }
     })();
 
+    const dailyMap = (() => {
+      const map = new Map<string, number>();
+      try {
+        const accounts = (dailyData as any).viewer.accounts as {
+          rumPageloadEventsAdaptiveGroups: { count: number; dimensions: { date: string } }[];
+        }[];
+        for (const g of accounts[0]?.rumPageloadEventsAdaptiveGroups ?? []) {
+          map.set(g.dimensions.date, (map.get(g.dimensions.date) ?? 0) + g.count);
+        }
+      } catch {
+        // ignore
+      }
+      return map;
+    })();
+
+    const dailyCounts = Array.from({ length: DAILY_CHART_DAYS }, (_, i) => {
+      const date = jstDateLabel(DAILY_CHART_DAYS - 1 - i);
+      return { date, count: dailyMap.get(date) ?? 0 };
+    });
+
     return {
       today: countOf(todayData),
       last7Days: countOf(week),
       last30Days: countOf(month),
       topPages,
+      dailyCounts,
       available: true,
     };
   } catch (err) {
