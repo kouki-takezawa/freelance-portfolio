@@ -244,6 +244,41 @@ const baseStyle = `
     aside form button { width: auto; margin-top: 0; padding: 6px 10px; font-size: 12px; }
     main.content { margin-left: 0; padding: 20px 16px 60px; }
     .login-box { margin: 40px auto; max-width: calc(100% - 32px); }
+
+    /* 横長テーブルはカード型に組み替えて横スクロールをなくす */
+    .table-wrap { overflow-x: visible; border: none; background: none; }
+    table.data, table.data tbody, table.data tr, table.data td { display: block; width: 100%; }
+    table.data { white-space: normal; }
+    table.data thead { display: none; }
+    table.data tbody tr {
+      background: #fff;
+      border: 1px solid #e4e7ec;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      padding: 4px 0;
+    }
+    table.data td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f1f4;
+      text-align: right;
+    }
+    table.data tbody tr td:last-child { border-bottom: none; }
+    table.data td::before {
+      content: attr(data-label);
+      font-size: 12px;
+      font-weight: 600;
+      color: #5b6472;
+      text-align: left;
+      flex-shrink: 0;
+    }
+    table.data td:not([data-label])::before { content: none; }
+    table.data td.hint { display: block; text-align: left; }
+    table.data td.actions { justify-content: flex-end; padding-top: 14px; }
   }
 `;
 
@@ -699,13 +734,13 @@ export function ordersListPage(data: {
             const overdue = isOverdue(o);
             return `
         <tr>
-          <td>${esc(o.clientName)}</td>
-          <td>${esc(o.serviceType)}</td>
-          <td>${formatYen(o.amount)}</td>
-          <td>${esc(o.orderDate)}</td>
-          <td class="${overdue ? "overdue" : ""}">${esc(o.dueDate)}${overdue ? " (超過)" : ""}</td>
-          <td><span class="status-pill status-${esc(o.status)}">${esc(o.status)}</span></td>
-          <td><span class="status-pill status-${esc(o.paymentStatus)}">${esc(o.paymentStatus)}</span></td>
+          <td data-label="クライアント">${esc(o.clientName)}</td>
+          <td data-label="サービス">${esc(o.serviceType)}</td>
+          <td data-label="金額">${formatYen(o.amount)}</td>
+          <td data-label="受注日">${esc(o.orderDate)}</td>
+          <td data-label="納期" class="${overdue ? "overdue" : ""}">${esc(o.dueDate)}${overdue ? " (超過)" : ""}</td>
+          <td data-label="進捗"><span class="status-pill status-${esc(o.status)}">${esc(o.status)}</span></td>
+          <td data-label="入金"><span class="status-pill status-${esc(o.paymentStatus)}">${esc(o.paymentStatus)}</span></td>
           <td class="actions">
             <a href="/orders/${encodeURIComponent(o.key)}/edit" class="small" style="text-decoration:none;display:inline-block;padding:5px 14px;border:1px solid #1e3a5f;border-radius:999px;color:#1e3a5f;font-size:12px;font-weight:700">編集</a>
             <form method="post" action="/orders/${encodeURIComponent(o.key)}/delete" onsubmit="return confirm('この受注を削除しますか？');">
@@ -839,9 +874,9 @@ export function revenuePage(data: {
           .map(
             (m) => `
         <tr>
-          <td>${esc(m.month)}</td>
-          <td>${formatYen(m.total)}</td>
-          <td>${m.count}件</td>
+          <td data-label="月">${esc(m.month)}</td>
+          <td data-label="売上">${formatYen(m.total)}</td>
+          <td data-label="件数">${m.count}件</td>
         </tr>
       `
           )
@@ -965,7 +1000,7 @@ export function analyticsPage(data: {
               summary.topPages.length === 0
                 ? `<tr><td colspan="2" class="hint" style="white-space:normal">まだデータがありません。サイトへのアクセスが増えると表示されます。</td></tr>`
                 : summary.topPages
-                    .map((p) => `<tr><td>${esc(p.path)}</td><td>${p.count}</td></tr>`)
+                    .map((p) => `<tr><td data-label="パス">${esc(p.path)}</td><td data-label="ページビュー">${p.count}</td></tr>`)
                     .join("")
             }
           </tbody>
