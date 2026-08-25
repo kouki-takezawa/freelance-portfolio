@@ -39,9 +39,17 @@ jobs:
             SESSION_SECRET
             CONTENT_GITHUB_TOKEN
             CF_ANALYTICS_TOKEN
+            META_IG_ACCESS_TOKEN
+            META_IG_USER_ID
+            META_THREADS_ACCESS_TOKEN
+            META_THREADS_USER_ID
         env:
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
           CONTENT_GITHUB_TOKEN: ${{ secrets.CONTENT_GITHUB_TOKEN }}
           CF_ANALYTICS_TOKEN: ${{ secrets.CF_ANALYTICS_TOKEN }}
+          META_IG_ACCESS_TOKEN: ${{ secrets.META_IG_ACCESS_TOKEN }}
+          META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+          META_THREADS_ACCESS_TOKEN: ${{ secrets.META_THREADS_ACCESS_TOKEN }}
+          META_THREADS_USER_ID: ${{ secrets.META_THREADS_USER_ID }}

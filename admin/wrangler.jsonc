@@ -8,5 +8,22 @@
       "binding": "DATA",
       "id": "e37dfd650b9a4271b2bdb5b33e364b56"
     }
-  ]
+  ],
+  // SNS投稿の手動アップロード写真を保存するバケット。
+  // 初回デプロイ前に `wrangler r2 bucket create freelance-hp-social-media` で作成しておく必要がある
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "freelance-hp-social-media"
+    }
+  ],
+  // SNSカード生成用フォントなど、JSバンドルに含めたくない静的ファイルの配信用
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  // 予約投稿の自動公開・アクセストークンの定期リフレッシュ
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  }
 }

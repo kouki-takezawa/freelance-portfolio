@@ -87,3 +87,34 @@ export const SEO_PAGES: { path: string; key: string; label: string }[] = [
   { path: "/contact", key: "contact", label: "お問い合わせ" },
   { path: "/privacy", key: "privacy", label: "プライバシーポリシー" },
 ];
+
+export const SOCIAL_PLATFORMS = ["instagram", "threads"] as const;
+export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
+
+export const SOCIAL_PLATFORM_LABELS: Record<SocialPlatform, string> = {
+  instagram: "Instagram",
+  threads: "Threads",
+};
+
+export const SOCIAL_POST_STATUSES = ["scheduled", "published", "failed", "canceled"] as const;
+export type SocialPostStatus = (typeof SOCIAL_POST_STATUSES)[number];
+
+export type SocialPostResult = {
+  platform: SocialPlatform;
+  success: boolean;
+  postId: string;
+  error: string;
+};
+
+export type SocialPost = {
+  key: string;
+  id: string;
+  platforms: SocialPlatform[];
+  caption: string;
+  cardHeadline: string;
+  imageR2Key: string;
+  scheduledAt: number;
+  status: SocialPostStatus;
+  results: SocialPostResult[];
+  createdAt: number;
+};
