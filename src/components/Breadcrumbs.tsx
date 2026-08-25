@@ -19,7 +19,7 @@ export default function Breadcrumbs({ items }: { items: Crumb[] }) {
     <nav aria-label="パンくずリスト" className="text-xs text-muted">
       <script
         type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
+         
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ol className="flex flex-wrap items-center gap-1.5">

@@ -34,7 +34,7 @@ export default function MobileMenu() {
       </button>
 
       {open && (
-        <nav className="absolute inset-x-0 top-full border-b border-border bg-background px-6 py-4 shadow-sm">
+        <nav className="fixed inset-x-0 top-[69px] bottom-0 z-50 overflow-y-auto bg-background px-6 py-4">
           <ul className="flex flex-col gap-1">
             {[...siteConfig.navLinks, { href: "/privacy", label: "プライバシーポリシー" }].map(
               (link) => (
@@ -42,7 +42,7 @@ export default function MobileMenu() {
                   <Link
                     href={link.href}
                     onClick={() => setOpen(false)}
-                    className="block rounded-lg px-3 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-surface hover:text-accent"
+                    className="block rounded-lg px-3 py-3 text-base font-medium text-foreground/80 transition-colors hover:bg-surface hover:text-accent"
                   >
                     {link.label}
                   </Link>

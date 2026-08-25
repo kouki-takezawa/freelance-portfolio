@@ -54,7 +54,7 @@ export default function AboutPage() {
         </div>
         <div>
           <p className="text-lg font-bold">{siteConfig.siteName}</p>
-          <p className="text-sm text-muted">HP・LP・システム/Webアプリ開発</p>
+          <p className="text-sm text-muted">HP・LP・システム/Webアプリ開発・LINE公式アカウント構築</p>
         </div>
       </div>
 

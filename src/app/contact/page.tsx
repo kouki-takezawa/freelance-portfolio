@@ -24,7 +24,7 @@ export default function ContactPage() {
         HP制作・LP制作・システム/Webアプリ開発・LINE公式アカウント構築について、ご相談・お見積りは無料です。「何から頼めばいいかわからない」という段階でも構いませんので、以下のフォームよりお気軽にご連絡ください。2営業日以内を目安にご返信します。
       </p>
 
-      <div className="mt-6 flex items-center gap-3 rounded-2xl border border-border bg-surface p-4">
+      <div className="mt-6 flex flex-col items-start gap-3 rounded-2xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-foreground/80">
           フォームのほか、公式LINEからも気軽にご相談いただけます。
         </p>
