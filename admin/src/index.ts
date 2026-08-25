@@ -67,9 +67,62 @@ async function getUnreadCount(env: Bindings): Promise<number> {
   return keys.filter((k) => (k.metadata as { read?: boolean } | null)?.read === false).length;
 }
 
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join("; "),
+};
+
+app.use("*", async (c, next) => {
+  await next();
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    c.header(key, value);
+  }
+});
+
+// SameSite=Laxのcookieでは防ぎきれない場合に備えたCSRF対策の保険
+app.use("*", async (c, next) => {
+  const method = c.req.method;
+  if (method !== "GET" && method !== "HEAD") {
+    const origin = c.req.header("Origin");
+    if (origin && origin !== new URL(c.req.url).origin) {
+      return c.text("Forbidden", 403);
+    }
+  }
+  await next();
+});
+
+const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 60 * 15;
+const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 8;
+
 app.get("/login", (c) => c.html(loginPage()));
 
 app.post("/login", async (c) => {
+  const ip = c.req.header("CF-Connecting-IP") ?? "unknown";
+  const rateLimitKey = `loginattempt:${ip}`;
+
+  const attempts = Number((await c.env.DATA.get(rateLimitKey)) ?? "0");
+  if (attempts >= LOGIN_RATE_LIMIT_MAX_ATTEMPTS) {
+    return c.html(
+      loginPage("ログイン試行回数が多すぎます。しばらくしてから再度お試しください。"),
+      429
+    );
+  }
+
   const body = await c.req.parseBody();
   const email = String(body.email ?? "").trim();
   const password = String(body.password ?? "");
@@ -78,8 +131,13 @@ app.post("/login", async (c) => {
   const okPassword = timingSafeEqual(password, c.env.ADMIN_PASSWORD);
 
   if (!okEmail || !okPassword) {
+    await c.env.DATA.put(rateLimitKey, String(attempts + 1), {
+      expirationTtl: LOGIN_RATE_LIMIT_WINDOW_SECONDS,
+    });
     return c.html(loginPage("メールアドレスまたはパスワードが違います"), 401);
   }
+
+  await c.env.DATA.delete(rateLimitKey);
 
   const cookieValue = await createSessionCookie(email, c.env.SESSION_SECRET);
   setCookie(c, COOKIE_NAME, cookieValue, {
