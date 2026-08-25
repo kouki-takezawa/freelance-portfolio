@@ -2,6 +2,7 @@ import {
   SEO_PAGES,
   SPARE_SERVICES_ROWS,
   SPARE_WORKS_ROWS,
+  type Inquiry,
   type ServiceMenu,
   type SeoMap,
   type WorkCase,
@@ -16,6 +17,8 @@ export function esc(value: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
+const PUBLIC_SITE_URL = "https://freelance-hp.takechin001031.workers.dev";
+
 const baseStyle = `
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -25,29 +28,55 @@ const baseStyle = `
     background: #f8f9fb;
     color: #171923;
   }
-  header {
+  .app { display: flex; min-height: 100vh; }
+  aside {
+    width: 220px;
+    flex-shrink: 0;
     background: #1e3a5f;
     color: #fff;
-    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+  }
+  aside .brand { padding: 0 20px 20px; font-weight: 700; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.15); }
+  aside nav { flex: 1; padding-top: 12px; }
+  aside nav a {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
+    padding: 10px 20px;
+    color: rgba(255,255,255,0.85);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
   }
-  header a { color: #fff; text-decoration: none; font-weight: 700; }
-  header nav a { margin-right: 16px; font-weight: 500; opacity: 0.9; }
-  header form { display: inline; }
-  header button {
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.5);
+  aside nav a.active { background: rgba(255,255,255,0.14); color: #fff; font-weight: 700; }
+  aside nav a:hover { background: rgba(255,255,255,0.08); }
+  aside .badge {
+    background: #e05252;
     color: #fff;
     border-radius: 999px;
-    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+  }
+  aside .footer { padding: 12px 20px 0; border-top: 1px solid rgba(255,255,255,0.15); margin-top: 12px; }
+  aside .footer a { display: block; color: rgba(255,255,255,0.75); font-size: 13px; text-decoration: none; padding: 6px 0; }
+  aside form button {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px;
     cursor: pointer;
     font-size: 13px;
+    margin-top: 8px;
   }
-  main { max-width: 880px; margin: 0 auto; padding: 32px 24px 80px; }
-  h1 { font-size: 22px; }
-  h2 { font-size: 18px; border-bottom: 2px solid #e4e7ec; padding-bottom: 8px; margin-top: 48px; }
+  main.content { flex: 1; padding: 32px 40px 80px; max-width: 900px; }
+  h1 { font-size: 22px; margin-top: 0; }
+  h2 { font-size: 16px; color: #5b6472; margin-top: 0; }
   fieldset {
     border: 1px solid #e4e7ec;
     border-radius: 12px;
@@ -62,7 +91,7 @@ const baseStyle = `
     padding: 8px 10px;
     border: 1px solid #e4e7ec;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 16px;
     font-family: inherit;
   }
   textarea { min-height: 70px; resize: vertical; }
@@ -79,6 +108,16 @@ const baseStyle = `
     font-weight: 700;
     cursor: pointer;
   }
+  button.small {
+    background: #fff;
+    color: #1e3a5f;
+    border: 1px solid #1e3a5f;
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
   .hint { color: #5b6472; font-size: 13px; margin-top: 4px; }
   .banner {
     padding: 12px 16px;
@@ -88,6 +127,21 @@ const baseStyle = `
   }
   .banner.ok { background: #e6f4ea; color: #1e7a34; }
   .banner.error { background: #fdecea; color: #b3261e; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 24px; }
+  .card {
+    background: #fff;
+    border: 1px solid #e4e7ec;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card .num { font-size: 28px; font-weight: 700; color: #1e3a5f; }
+  .card .label { font-size: 13px; color: #5b6472; margin-top: 4px; }
+  .card a { font-size: 13px; color: #1e3a5f; }
+  .inquiry-card { background: #fff; border: 1px solid #e4e7ec; border-radius: 12px; padding: 18px; margin-bottom: 14px; }
+  .inquiry-card.unread { border-left: 4px solid #e05252; }
+  .inquiry-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #5b6472; margin-bottom: 8px; }
+  .inquiry-message { white-space: pre-wrap; font-size: 14px; margin: 10px 0; }
+  .inquiry-actions { display: flex; gap: 8px; }
   .login-box {
     max-width: 360px;
     margin: 80px auto;
@@ -98,9 +152,47 @@ const baseStyle = `
   }
   .login-box h1 { text-align: center; margin-bottom: 24px; }
   .login-box button { width: 100%; margin-top: 20px; }
+
+  @media (max-width: 720px) {
+    .app { flex-direction: column; }
+    aside {
+      width: 100%;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 12px;
+      padding: 12px 16px;
+    }
+    aside .brand { padding: 0; border-bottom: none; font-size: 13px; white-space: nowrap; }
+    aside nav {
+      flex: 1 1 100%;
+      order: 3;
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-top: 0;
+      gap: 4px;
+    }
+    aside nav a { padding: 8px 12px; white-space: nowrap; }
+    aside .footer {
+      border-top: none;
+      margin-top: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+    aside .footer a { padding: 0; font-size: 12px; }
+    aside form { display: inline-block; }
+    aside form button { width: auto; margin-top: 0; padding: 6px 10px; font-size: 12px; }
+    main.content { padding: 20px 16px 60px; }
+    .login-box { margin: 40px auto; max-width: calc(100% - 32px); }
+  }
 `;
 
-function layout(title: string, body: string, loggedIn: boolean): string {
+function htmlShell(title: string, bodyInner: string): string {
   return `<!doctype html>
 <html lang="ja">
 <head>
@@ -110,24 +202,7 @@ function layout(title: string, body: string, loggedIn: boolean): string {
   <title>${esc(title)} | 管理画面</title>
   <style>${baseStyle}</style>
 </head>
-<body>
-  ${
-    loggedIn
-      ? `<header>
-    <a href="/">ヨリソイワークス管理画面</a>
-    <div>
-      <nav style="display:inline">
-        <a href="/#works">実績</a>
-        <a href="/#services">料金</a>
-        <a href="/#seo">SEO</a>
-      </nav>
-      <form method="post" action="/logout"><button type="submit">ログアウト</button></form>
-    </div>
-  </header>`
-      : ""
-  }
-  <main>${body}</main>
-</body>
+<body>${bodyInner}</body>
 </html>`;
 }
 
@@ -145,7 +220,89 @@ export function loginPage(errorMessage?: string): string {
       </form>
     </div>
   `;
-  return layout("ログイン", body, false);
+  return htmlShell("ログイン", body);
+}
+
+type NavKey = "overview" | "works" | "services" | "seo" | "inquiries";
+
+const NAV_ITEMS: { key: NavKey; href: string; label: string }[] = [
+  { key: "overview", href: "/", label: "ダッシュボード" },
+  { key: "works", href: "/works", label: "実績" },
+  { key: "services", href: "/services", label: "料金" },
+  { key: "seo", href: "/seo", label: "SEO" },
+  { key: "inquiries", href: "/inquiries", label: "お問い合わせ" },
+];
+
+function shell(opts: {
+  title: string;
+  active: NavKey;
+  unreadCount: number;
+  content: string;
+}): string {
+  const nav = NAV_ITEMS.map((item) => {
+    const badge =
+      item.key === "inquiries" && opts.unreadCount > 0
+        ? `<span class="badge">${opts.unreadCount}</span>`
+        : "";
+    return `<a href="${item.href}" class="${item.key === opts.active ? "active" : ""}">${esc(item.label)}${badge}</a>`;
+  }).join("");
+
+  const body = `
+    <div class="app">
+      <aside>
+        <div class="brand">ヨリソイワークス<br />管理画面</div>
+        <nav>${nav}</nav>
+        <div class="footer">
+          <a href="${PUBLIC_SITE_URL}" target="_blank" rel="noreferrer">公開サイトを見る ↗</a>
+          <form method="post" action="/logout"><button type="submit">ログアウト</button></form>
+        </div>
+      </aside>
+      <main class="content">${opts.content}</main>
+    </div>
+  `;
+  return htmlShell(opts.title, body);
+}
+
+function banner(message?: { type: "ok" | "error"; text: string }): string {
+  if (!message) return "";
+  return `<div class="banner ${message.type === "ok" ? "ok" : "error"}">${esc(message.text)}</div>`;
+}
+
+export function overviewPage(data: {
+  worksCount: number;
+  servicesCount: number;
+  unreadCount: number;
+  inquiriesCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const content = `
+    <h1>ダッシュボード</h1>
+    <p class="hint">各項目を編集すると、数十秒〜1分ほどで公開サイトに反映されます。</p>
+    ${banner(data.message)}
+    <div class="cards">
+      <div class="card">
+        <div class="num">${data.worksCount}</div>
+        <div class="label">実績・制作事例</div>
+        <a href="/works">編集する →</a>
+      </div>
+      <div class="card">
+        <div class="num">${data.servicesCount}</div>
+        <div class="label">サービス・料金</div>
+        <a href="/services">編集する →</a>
+      </div>
+      <div class="card">
+        <div class="num">${data.unreadCount} <span style="font-size:14px;color:#5b6472">/ ${data.inquiriesCount}</span></div>
+        <div class="label">未読のお問い合わせ</div>
+        <a href="/inquiries">確認する →</a>
+      </div>
+    </div>
+  `;
+  return shell({
+    title: "ダッシュボード",
+    active: "overview",
+    unreadCount: data.unreadCount,
+    content,
+  });
 }
 
 function workFieldset(index: number, work?: WorkCase): string {
@@ -176,6 +333,31 @@ function workFieldset(index: number, work?: WorkCase): string {
   `;
 }
 
+export function worksPage(data: {
+  works: WorkCase[];
+  unreadCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const rows = [
+    ...data.works.map((w, i) => workFieldset(i, w)),
+    ...Array.from({ length: SPARE_WORKS_ROWS }, (_, i) =>
+      workFieldset(data.works.length + i)
+    ),
+  ].join("");
+
+  const content = `
+    <h1>実績・制作事例</h1>
+    <h2>公開サイトの「実績」ページに表示される内容です</h2>
+    ${banner(data.message)}
+    <form method="post" action="/works">
+      <input type="hidden" name="rowCount" value="${data.works.length + SPARE_WORKS_ROWS}" />
+      ${rows}
+      <div class="save-bar"><button class="primary" type="submit">保存する</button></div>
+    </form>
+  `;
+  return shell({ title: "実績", active: "works", unreadCount: data.unreadCount, content });
+}
+
 function serviceFieldset(index: number, service?: ServiceMenu): string {
   return `
     <fieldset>
@@ -202,27 +384,37 @@ function serviceFieldset(index: number, service?: ServiceMenu): string {
   `;
 }
 
-export function dashboardPage(data: {
-  works: WorkCase[];
+export function servicesPage(data: {
   services: ServiceMenu[];
-  seo: SeoMap;
+  unreadCount: number;
   message?: { type: "ok" | "error"; text: string };
 }): string {
-  const workRows = [
-    ...data.works.map((w, i) => workFieldset(i, w)),
-    ...Array.from({ length: SPARE_WORKS_ROWS }, (_, i) =>
-      workFieldset(data.works.length + i)
-    ),
-  ].join("");
-
-  const serviceRows = [
+  const rows = [
     ...data.services.map((s, i) => serviceFieldset(i, s)),
     ...Array.from({ length: SPARE_SERVICES_ROWS }, (_, i) =>
       serviceFieldset(data.services.length + i)
     ),
   ].join("");
 
-  const seoRows = SEO_PAGES.map(({ key, path, label }) => {
+  const content = `
+    <h1>サービス・料金</h1>
+    <h2>公開サイトの「サービス・料金」ページに表示される内容です</h2>
+    ${banner(data.message)}
+    <form method="post" action="/services">
+      <input type="hidden" name="rowCount" value="${data.services.length + SPARE_SERVICES_ROWS}" />
+      ${rows}
+      <div class="save-bar"><button class="primary" type="submit">保存する</button></div>
+    </form>
+  `;
+  return shell({ title: "料金", active: "services", unreadCount: data.unreadCount, content });
+}
+
+export function seoPage(data: {
+  seo: SeoMap;
+  unreadCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const rows = SEO_PAGES.map(({ key, path, label }) => {
     const entry = data.seo[path] ?? { title: "", description: "" };
     return `
       <fieldset>
@@ -235,35 +427,60 @@ export function dashboardPage(data: {
     `;
   }).join("");
 
-  const banner = data.message
-    ? `<div class="banner ${data.message.type === "ok" ? "ok" : "error"}">${esc(data.message.text)}</div>`
-    : "";
-
-  const body = `
-    <h1>サイトコンテンツ管理</h1>
-    <p class="hint">保存すると数十秒〜1分ほどでサイトに反映されます(GitHubへコミット→自動デプロイ)。</p>
-    ${banner}
-
-    <h2 id="works">実績・制作事例</h2>
-    <form method="post" action="/works">
-      <input type="hidden" name="rowCount" value="${data.works.length + SPARE_WORKS_ROWS}" />
-      ${workRows}
-      <div class="save-bar"><button class="primary" type="submit">実績を保存</button></div>
-    </form>
-
-    <h2 id="services">サービス・料金</h2>
-    <form method="post" action="/services">
-      <input type="hidden" name="rowCount" value="${data.services.length + SPARE_SERVICES_ROWS}" />
-      ${serviceRows}
-      <div class="save-bar"><button class="primary" type="submit">料金を保存</button></div>
-    </form>
-
-    <h2 id="seo">SEO設定(ページごとのタイトル・description)</h2>
+  const content = `
+    <h1>SEO設定</h1>
+    <h2>検索結果に表示されるページごとのタイトル・descriptionです</h2>
+    ${banner(data.message)}
     <form method="post" action="/seo">
-      ${seoRows}
-      <div class="save-bar"><button class="primary" type="submit">SEO設定を保存</button></div>
+      ${rows}
+      <div class="save-bar"><button class="primary" type="submit">保存する</button></div>
     </form>
   `;
+  return shell({ title: "SEO設定", active: "seo", unreadCount: data.unreadCount, content });
+}
 
-  return layout("ダッシュボード", body, true);
+function formatDate(ms: number): string {
+  return new Date(ms).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+}
+
+export function inquiriesPage(data: {
+  inquiries: Inquiry[];
+  unreadCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const list =
+    data.inquiries.length === 0
+      ? `<p class="hint">まだお問い合わせはありません。</p>`
+      : data.inquiries
+          .map(
+            (inq) => `
+        <div class="inquiry-card ${inq.read ? "" : "unread"}">
+          <div class="inquiry-meta">
+            <span>${formatDate(inq.receivedAt)}</span>
+            <span>${esc(inq.inquiryType)}</span>
+            ${inq.budget ? `<span>予算: ${esc(inq.budget)}</span>` : ""}
+            ${inq.read ? "" : `<span style="color:#e05252;font-weight:700">未読</span>`}
+          </div>
+          <div><strong>${esc(inq.name)}</strong> &lt;${esc(inq.email)}&gt;</div>
+          <div class="inquiry-message">${esc(inq.message)}</div>
+          <div class="inquiry-actions">
+            <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/toggle-read">
+              <button class="small" type="submit">${inq.read ? "未読にする" : "既読にする"}</button>
+            </form>
+            <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/delete" onsubmit="return confirm('この問い合わせを削除しますか？');">
+              <button class="small" type="submit" style="color:#b3261e;border-color:#b3261e">削除</button>
+            </form>
+          </div>
+        </div>
+      `
+          )
+          .join("");
+
+  const content = `
+    <h1>お問い合わせ</h1>
+    <h2>公開サイトのお問い合わせフォームから送信された内容です</h2>
+    ${banner(data.message)}
+    ${list}
+  `;
+  return shell({ title: "お問い合わせ", active: "inquiries", unreadCount: data.unreadCount, content });
 }

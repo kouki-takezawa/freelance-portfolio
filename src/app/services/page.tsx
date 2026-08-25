@@ -27,9 +27,9 @@ export default function ServicesPage() {
             key={service.slug}
             className="rounded-2xl border border-border p-8"
           >
-            <div className="flex flex-wrap items-baseline justify-between gap-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-4">
               <h2 className="text-xl font-bold">{service.name}</h2>
-              <div className="text-right">
+              <div className="sm:text-right">
                 <p className="text-lg font-bold text-accent">
                   {service.priceFrom}
                 </p>

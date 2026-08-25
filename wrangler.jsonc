@@ -1,9 +1,17 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "freelance-hp",
+  "main": "worker/index.ts",
   "compatibility_date": "2024-09-23",
   "assets": {
     "directory": "./out",
+    "binding": "ASSETS",
     "not_found_handling": "404-page"
-  }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "INQUIRIES",
+      "id": "e37dfd650b9a4271b2bdb5b33e364b56"
+    }
+  ]
 }

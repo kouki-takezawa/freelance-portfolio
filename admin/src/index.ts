@@ -2,14 +2,22 @@ import { Hono, type Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createSessionCookie, timingSafeEqual, verifySessionCookie } from "./auth";
 import { getJsonFile, putJsonFile } from "./github";
-import { dashboardPage, loginPage } from "./templates";
-import { SEO_PAGES, type ServiceMenu, type SeoMap, type WorkCase } from "./types";
+import {
+  inquiriesPage,
+  loginPage,
+  overviewPage,
+  seoPage,
+  servicesPage,
+  worksPage,
+} from "./templates";
+import { SEO_PAGES, type Inquiry, type ServiceMenu, type SeoMap, type WorkCase } from "./types";
 
 type Bindings = {
   ADMIN_EMAIL: string;
   ADMIN_PASSWORD: string;
   SESSION_SECRET: string;
   CONTENT_GITHUB_TOKEN: string;
+  INQUIRIES: KVNamespace;
 };
 
 const COOKIE_NAME = "admin_session";
@@ -25,6 +33,11 @@ function slugify(text: string): string {
     .replace(/[^a-z0-9぀-ヿ゠-ヿ一-龯]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return cleaned || "item";
+}
+
+async function getUnreadCount(env: Bindings): Promise<number> {
+  const { keys } = await env.INQUIRIES.list({ prefix: "inquiry:" });
+  return keys.filter((k) => (k.metadata as { read?: boolean } | null)?.read === false).length;
 }
 
 app.get("/login", (c) => c.html(loginPage()));
@@ -69,25 +82,40 @@ app.use("/*", async (c, next) => {
 
 app.get("/", async (c) => {
   try {
-    const [works, services, seo] = await Promise.all([
+    const [works, services, unreadCount, inquiriesCount] = await Promise.all([
       getJsonFile<WorkCase[]>(c.env.CONTENT_GITHUB_TOKEN, "content/works.json"),
       getJsonFile<ServiceMenu[]>(c.env.CONTENT_GITHUB_TOKEN, "content/services.json"),
-      getJsonFile<SeoMap>(c.env.CONTENT_GITHUB_TOKEN, "content/seo.json"),
+      getUnreadCount(c.env),
+      c.env.INQUIRIES.list({ prefix: "inquiry:" }).then((r) => r.keys.length),
     ]);
     return c.html(
-      dashboardPage({ works: works.value, services: services.value, seo: seo.value })
+      overviewPage({
+        worksCount: works.value.length,
+        servicesCount: services.value.length,
+        unreadCount,
+        inquiriesCount,
+      })
     );
   } catch (err) {
     return c.html(
-      dashboardPage({
-        works: [],
-        services: [],
-        seo: {},
+      overviewPage({
+        worksCount: 0,
+        servicesCount: 0,
+        unreadCount: 0,
+        inquiriesCount: 0,
         message: { type: "error", text: (err as Error).message },
       }),
       500
     );
   }
+});
+
+app.get("/works", async (c) => {
+  const [works, unreadCount] = await Promise.all([
+    getJsonFile<WorkCase[]>(c.env.CONTENT_GITHUB_TOKEN, "content/works.json"),
+    getUnreadCount(c.env),
+  ]);
+  return c.html(worksPage({ works: works.value, unreadCount }));
 });
 
 app.post("/works", async (c) => {
@@ -113,7 +141,23 @@ app.post("/works", async (c) => {
     });
   }
 
-  return saveAndRender(c, "content/works.json", items, "実績");
+  return saveContentAndRedisplay(c, {
+    path: "content/works.json",
+    value: items,
+    label: "実績",
+    render: async (message) => {
+      const unreadCount = await getUnreadCount(c.env);
+      return worksPage({ works: items, unreadCount, message });
+    },
+  });
+});
+
+app.get("/services", async (c) => {
+  const [services, unreadCount] = await Promise.all([
+    getJsonFile<ServiceMenu[]>(c.env.CONTENT_GITHUB_TOKEN, "content/services.json"),
+    getUnreadCount(c.env),
+  ]);
+  return c.html(servicesPage({ services: services.value, unreadCount }));
 });
 
 app.post("/services", async (c) => {
@@ -139,7 +183,23 @@ app.post("/services", async (c) => {
     });
   }
 
-  return saveAndRender(c, "content/services.json", items, "料金");
+  return saveContentAndRedisplay(c, {
+    path: "content/services.json",
+    value: items,
+    label: "料金",
+    render: async (message) => {
+      const unreadCount = await getUnreadCount(c.env);
+      return servicesPage({ services: items, unreadCount, message });
+    },
+  });
+});
+
+app.get("/seo", async (c) => {
+  const [seo, unreadCount] = await Promise.all([
+    getJsonFile<SeoMap>(c.env.CONTENT_GITHUB_TOKEN, "content/seo.json"),
+    getUnreadCount(c.env),
+  ]);
+  return c.html(seoPage({ seo: seo.value, unreadCount }));
 });
 
 app.post("/seo", async (c) => {
@@ -153,44 +213,84 @@ app.post("/seo", async (c) => {
     };
   }
 
-  return saveAndRender(c, "content/seo.json", seo, "SEO設定");
+  return saveContentAndRedisplay(c, {
+    path: "content/seo.json",
+    value: seo,
+    label: "SEO設定",
+    render: async (message) => {
+      const unreadCount = await getUnreadCount(c.env);
+      return seoPage({ seo, unreadCount, message });
+    },
+  });
 });
 
-async function saveAndRender(
-  c: AppContext,
-  path: string,
-  value: unknown,
-  label: string
-) {
-  try {
-    const current = await getJsonFile(c.env.CONTENT_GITHUB_TOKEN, path);
-    await putJsonFile(
-      c.env.CONTENT_GITHUB_TOKEN,
-      path,
-      value,
-      current.sha,
-      `管理画面から${label}を更新`
-    );
-    return renderDashboardWithMessage(c, { type: "ok", text: `${label}を保存しました。まもなくサイトに反映されます。` });
-  } catch (err) {
-    return renderDashboardWithMessage(c, { type: "error", text: (err as Error).message }, 500);
+app.get("/inquiries", async (c) => {
+  const inquiries = await listInquiries(c.env);
+  const unreadCount = inquiries.filter((i) => !i.read).length;
+  return c.html(inquiriesPage({ inquiries, unreadCount }));
+});
+
+app.post("/inquiries/:key/toggle-read", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  const raw = await c.env.INQUIRIES.get(key);
+  if (raw) {
+    const inquiry = JSON.parse(raw) as Inquiry;
+    const nextRead = !inquiry.read;
+    await c.env.INQUIRIES.put(key, JSON.stringify({ ...inquiry, read: nextRead }), {
+      metadata: { read: nextRead },
+    });
   }
+  return c.redirect("/inquiries");
+});
+
+app.post("/inquiries/:key/delete", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  await c.env.INQUIRIES.delete(key);
+  return c.redirect("/inquiries");
+});
+
+async function listInquiries(env: Bindings): Promise<Inquiry[]> {
+  const { keys } = await env.INQUIRIES.list({ prefix: "inquiry:" });
+  const values = await Promise.all(
+    keys.map(async (k) => {
+      const raw = await env.INQUIRIES.get(k.name);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Omit<Inquiry, "key">;
+      return { ...parsed, key: k.name } as Inquiry;
+    })
+  );
+  return values
+    .filter((v): v is Inquiry => v !== null)
+    .sort((a, b) => b.receivedAt - a.receivedAt);
 }
 
-async function renderDashboardWithMessage(
+async function saveContentAndRedisplay(
   c: AppContext,
-  message: { type: "ok" | "error"; text: string },
-  status: 200 | 500 = 200
+  opts: {
+    path: string;
+    value: unknown;
+    label: string;
+    render: (message: { type: "ok" | "error"; text: string }) => Promise<string>;
+  }
 ) {
-  const [works, services, seo] = await Promise.all([
-    getJsonFile<WorkCase[]>(c.env.CONTENT_GITHUB_TOKEN, "content/works.json"),
-    getJsonFile<ServiceMenu[]>(c.env.CONTENT_GITHUB_TOKEN, "content/services.json"),
-    getJsonFile<SeoMap>(c.env.CONTENT_GITHUB_TOKEN, "content/seo.json"),
-  ]);
-  return c.html(
-    dashboardPage({ works: works.value, services: services.value, seo: seo.value, message }),
-    status
-  );
+  try {
+    const current = await getJsonFile(c.env.CONTENT_GITHUB_TOKEN, opts.path);
+    await putJsonFile(
+      c.env.CONTENT_GITHUB_TOKEN,
+      opts.path,
+      opts.value,
+      current.sha,
+      `管理画面から${opts.label}を更新`
+    );
+    const html = await opts.render({
+      type: "ok",
+      text: `${opts.label}を保存しました。まもなくサイトに反映されます。`,
+    });
+    return c.html(html);
+  } catch (err) {
+    const html = await opts.render({ type: "error", text: (err as Error).message });
+    return c.html(html, 500);
+  }
 }
 
 export default app;

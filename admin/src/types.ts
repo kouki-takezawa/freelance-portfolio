@@ -23,6 +23,18 @@ export type SeoEntry = {
 
 export type SeoMap = Record<string, SeoEntry>;
 
+export type Inquiry = {
+  key: string;
+  id: string;
+  name: string;
+  email: string;
+  inquiryType: string;
+  budget: string;
+  message: string;
+  receivedAt: number;
+  read: boolean;
+};
+
 export const SPARE_WORKS_ROWS = 2;
 export const SPARE_SERVICES_ROWS = 1;
 

@@ -67,7 +67,7 @@ export default function ContactForm() {
             name="name"
             type="text"
             autoComplete="name"
-            className="rounded-lg border border-border px-4 py-3 text-sm outline-none focus:border-accent"
+            className="rounded-lg border border-border px-4 py-3 text-base outline-none focus:border-accent"
             placeholder="山田 太郎"
           />
         </label>
@@ -78,7 +78,7 @@ export default function ContactForm() {
             name="email"
             type="email"
             autoComplete="email"
-            className="rounded-lg border border-border px-4 py-3 text-sm outline-none focus:border-accent"
+            className="rounded-lg border border-border px-4 py-3 text-base outline-none focus:border-accent"
             placeholder="you@example.com"
           />
         </label>
@@ -91,7 +91,7 @@ export default function ContactForm() {
             required
             name="inquiryType"
             defaultValue=""
-            className="rounded-lg border border-border px-4 py-3 text-sm outline-none focus:border-accent"
+            className="rounded-lg border border-border px-4 py-3 text-base outline-none focus:border-accent"
           >
             <option value="" disabled>
               選択してください
@@ -108,7 +108,7 @@ export default function ContactForm() {
           <select
             name="budget"
             defaultValue=""
-            className="rounded-lg border border-border px-4 py-3 text-sm outline-none focus:border-accent"
+            className="rounded-lg border border-border px-4 py-3 text-base outline-none focus:border-accent"
           >
             <option value="" disabled>
               選択してください(任意)

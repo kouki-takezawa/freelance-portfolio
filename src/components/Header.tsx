@@ -8,14 +8,14 @@ export default function Header() {
         <Link href="/" className="text-base font-bold tracking-tight sm:text-lg">
           {siteConfig.siteNameShort}
         </Link>
-        <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
           {siteConfig.navLinks
             .filter((link) => link.href !== "/contact")
             .map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-foreground/80 transition-colors hover:text-accent"
+                className="hidden text-foreground/80 transition-colors hover:text-accent sm:inline"
               >
                 {link.label}
               </Link>
