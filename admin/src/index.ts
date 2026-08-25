@@ -3,7 +3,6 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createSessionCookie, timingSafeEqual, verifySessionCookie } from "./auth";
 import { getJsonFile, putJsonFile } from "./github";
 import { getAnalyticsSummary, getTodayPageviews } from "./analytics";
-import { generateCardImage } from "./social/card";
 import {
   computeRevenue,
   createOrder,
@@ -23,8 +22,6 @@ import {
   revenuePage,
   seoPage,
   servicesPage,
-  socialCalendarFormPage,
-  socialCalendarListPage,
   worksPage,
 } from "./templates";
 import {
@@ -38,11 +35,8 @@ import {
   type PaymentStatus,
   type ServiceMenu,
   type SeoMap,
-  type SocialCalendarEntry,
   type WorkCase,
 } from "./types";
-
-const SOCIAL_CALENDAR_PATH = "content/social-calendar.json";
 
 type Bindings = {
   ADMIN_EMAIL: string;
@@ -51,7 +45,6 @@ type Bindings = {
   CONTENT_GITHUB_TOKEN: string;
   CF_ANALYTICS_TOKEN: string;
   DATA: KVNamespace;
-  ASSETS: Fetcher;
 };
 
 const COOKIE_NAME = "admin_session";
@@ -541,122 +534,6 @@ app.post("/inquiries/:key/delete", async (c) => {
   const key = decodeURIComponent(c.req.param("key"));
   await c.env.DATA.delete(key);
   return c.redirect("/inquiries");
-});
-
-app.get("/social-calendar", async (c) => {
-  const unreadCount = await getUnreadCount(c.env);
-  try {
-    const calendar = await getJsonFile<SocialCalendarEntry[]>(
-      c.env.CONTENT_GITHUB_TOKEN,
-      SOCIAL_CALENDAR_PATH
-    );
-    return c.html(socialCalendarListPage({ entries: calendar.value, unreadCount }));
-  } catch (err) {
-    return c.html(
-      socialCalendarListPage({
-        entries: [],
-        unreadCount,
-        message: { type: "error", text: (err as Error).message },
-      }),
-      500
-    );
-  }
-});
-
-app.get("/social-calendar/:day/edit", async (c) => {
-  const day = Number(c.req.param("day"));
-  const unreadCount = await getUnreadCount(c.env);
-  const calendar = await getJsonFile<SocialCalendarEntry[]>(
-    c.env.CONTENT_GITHUB_TOKEN,
-    SOCIAL_CALENDAR_PATH
-  );
-  const entry = calendar.value.find((e) => e.day === day);
-  if (!entry) return c.redirect("/social-calendar");
-  return c.html(socialCalendarFormPage({ entry, unreadCount }));
-});
-
-app.post("/social-calendar/:day", async (c) => {
-  const day = Number(c.req.param("day"));
-  const body = await c.req.parseBody();
-  const unreadCount = await getUnreadCount(c.env);
-
-  const submittedEntry: SocialCalendarEntry = {
-    day,
-    category: String(body.category ?? "").trim(),
-    cardHeadline: String(body.cardHeadline ?? "").trim(),
-    caption: String(body.caption ?? "").trim(),
-    posted: body.posted === "on",
-  };
-
-  try {
-    const current = await getJsonFile<SocialCalendarEntry[]>(
-      c.env.CONTENT_GITHUB_TOKEN,
-      SOCIAL_CALENDAR_PATH
-    );
-    const index = current.value.findIndex((e) => e.day === day);
-    if (index === -1) return c.redirect("/social-calendar");
-
-    const next = [...current.value];
-    next[index] = submittedEntry;
-    await putJsonFile(
-      c.env.CONTENT_GITHUB_TOKEN,
-      SOCIAL_CALENDAR_PATH,
-      next,
-      current.sha,
-      `管理画面から投稿カレンダー Day ${day} を更新`
-    );
-    return c.redirect("/social-calendar");
-  } catch (err) {
-    return c.html(
-      socialCalendarFormPage({
-        entry: submittedEntry,
-        unreadCount,
-        message: { type: "error", text: (err as Error).message },
-      }),
-      500
-    );
-  }
-});
-
-app.post("/social-calendar/:day/toggle-posted", async (c) => {
-  const day = Number(c.req.param("day"));
-  try {
-    const current = await getJsonFile<SocialCalendarEntry[]>(
-      c.env.CONTENT_GITHUB_TOKEN,
-      SOCIAL_CALENDAR_PATH
-    );
-    const index = current.value.findIndex((e) => e.day === day);
-    if (index !== -1) {
-      const next = [...current.value];
-      next[index] = { ...next[index], posted: !next[index].posted };
-      await putJsonFile(
-        c.env.CONTENT_GITHUB_TOKEN,
-        SOCIAL_CALENDAR_PATH,
-        next,
-        current.sha,
-        `管理画面から投稿カレンダー Day ${day} のステータスを更新`
-      );
-    }
-  } catch {
-    // 一覧側からのワンタッチ操作なので、失敗時は静かに一覧の再表示に任せる
-  }
-  return c.redirect("/social-calendar");
-});
-
-app.get("/social-calendar/image/:day", async (c) => {
-  const day = Number(c.req.param("day"));
-  const headline = c.req.query("h") ?? "";
-  const category = c.req.query("c") ?? "";
-  if (!headline) return c.notFound();
-
-  try {
-    const jpeg = await generateCardImage(c.env.ASSETS, { headline, category, variant: day % 3 });
-    return new Response(jpeg, {
-      headers: { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=3600" },
-    });
-  } catch (err) {
-    return c.text((err as Error).message, 500);
-  }
 });
 
 async function listInquiries(env: Bindings): Promise<Inquiry[]> {
