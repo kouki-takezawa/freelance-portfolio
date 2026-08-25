@@ -37,4 +37,13 @@ export const works: WorkCase[] = [
     points: ["予約枠の管理・自動通知", "管理画面での一覧・編集機能", "将来の機能追加を見据えた設計"],
     isSample: true,
   },
+  {
+    slug: "simple-web-app",
+    title: "業務効率化のための簡易Webアプリ",
+    category: "Webアプリ開発",
+    summary:
+      "在庫管理や日報入力など、日々の作業をブラウザから行える小規模なWebアプリの構築例です。まずは必要最低限の機能から、5万円台からご相談いただけます。",
+    points: ["スマホ・PC両対応のシンプルな画面", "小さく始めて後から機能追加が可能", "既存のExcel運用からの移行相談"],
+    isSample: true,
+  },
 ];

@@ -5,14 +5,19 @@ import { works } from "@/lib/works";
 
 const strengths = [
   {
+    title: "業界相場より抑えた明朗料金",
+    description:
+      "システム・Webアプリ開発は5万円から対応可能。必要な機能に絞って小さく始められるので、大きな予算がなくても相談しやすい料金設定です。",
+  },
+  {
     title: "小規模事業者に寄り添う制作",
     description:
       "大手には頼みにくい、小さな要望や予算感にも柔軟に対応します。何から始めればよいかわからない状態からのご相談も歓迎です。",
   },
   {
-    title: "HP・LPからシステムまで一貫対応",
+    title: "HP・LPからWebアプリまで一貫対応",
     description:
-      "サイト制作だけでなく、予約管理や業務効率化のためのシステム開発まで、事業の成長段階に合わせて相談できます。",
+      "サイト制作だけでなく、予約管理や業務効率化のためのシステム・Webアプリ開発まで、事業の成長段階に合わせて相談できます。",
   },
   {
     title: "平日夜間・土日でも連絡可能",
@@ -36,6 +41,14 @@ export default function Home() {
         <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
           {siteConfig.description}
         </p>
+        <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
+          <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
+            システム・Webアプリ開発 5万円〜
+          </span>
+          <span className="rounded-full bg-accent/10 px-4 py-1.5 text-accent">
+            相談・お見積り無料
+          </span>
+        </div>
         <div className="mt-8 flex flex-wrap gap-4">
           <Link
             href="/contact"
@@ -55,7 +68,7 @@ export default function Home() {
       <section className="border-t border-border bg-surface">
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <h2 className="text-xl font-bold sm:text-2xl">選ばれる理由</h2>
-          <div className="mt-10 grid gap-8 sm:grid-cols-3">
+          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {strengths.map((item) => (
               <div key={item.title}>
                 <h3 className="text-base font-semibold">{item.title}</h3>
