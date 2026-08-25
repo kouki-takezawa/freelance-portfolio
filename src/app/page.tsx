@@ -4,6 +4,7 @@ import { services } from "@/lib/services";
 import { works } from "@/lib/works";
 import HeroIllustration from "@/components/illustrations/HeroIllustration";
 import ServiceIcon from "@/components/illustrations/ServiceIcon";
+import { blogPosts } from "@/lib/blog";
 
 const strengths = [
   {
@@ -123,6 +124,12 @@ export default function Home() {
                 サービス・料金を見る
               </Link>
             </div>
+            <Link
+              href="/estimate"
+              className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-accent hover:underline"
+            >
+              かんたん見積もりシミュレーターを試す →
+            </Link>
           </div>
           <div className="lg:pl-4">
             <HeroIllustration />
@@ -132,7 +139,15 @@ export default function Home() {
 
       <section className="border-t border-border bg-surface">
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-          <h2 className="text-xl font-bold sm:text-2xl">選ばれる理由</h2>
+          <div className="flex items-end justify-between gap-4">
+            <h2 className="text-xl font-bold sm:text-2xl">選ばれる理由</h2>
+            <Link
+              href="/about"
+              className="text-sm font-semibold text-accent hover:underline"
+            >
+              運営者について →
+            </Link>
+          </div>
           <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {strengths.map((item, i) => (
               <div key={item.title}>
@@ -229,6 +244,34 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {blogPosts.length > 0 && (
+        <section className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+          <div className="flex items-end justify-between gap-4">
+            <h2 className="text-xl font-bold sm:text-2xl">お知らせ</h2>
+            <Link
+              href="/blog"
+              className="text-sm font-semibold text-accent hover:underline"
+            >
+              すべて見る →
+            </Link>
+          </div>
+          <div className="mt-8 grid gap-6 sm:grid-cols-2">
+            {blogPosts.slice(0, 2).map((post) => (
+              <Link
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                className="block rounded-2xl border border-border p-6 transition-colors hover:border-accent"
+              >
+                <h3 className="text-base font-semibold">{post.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  {post.excerpt}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="border-t border-border bg-surface">
         <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">

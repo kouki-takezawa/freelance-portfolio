@@ -3,6 +3,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createSessionCookie, timingSafeEqual, verifySessionCookie } from "./auth";
 import { getJsonFile, putJsonFile } from "./github";
 import {
+  blogPage,
   inquiriesPage,
   loginPage,
   overviewPage,
@@ -10,7 +11,14 @@ import {
   servicesPage,
   worksPage,
 } from "./templates";
-import { SEO_PAGES, type Inquiry, type ServiceMenu, type SeoMap, type WorkCase } from "./types";
+import {
+  SEO_PAGES,
+  type BlogPost,
+  type Inquiry,
+  type ServiceMenu,
+  type SeoMap,
+  type WorkCase,
+} from "./types";
 
 type Bindings = {
   ADMIN_EMAIL: string;
@@ -82,9 +90,10 @@ app.use("/*", async (c, next) => {
 
 app.get("/", async (c) => {
   try {
-    const [works, services, unreadCount, inquiriesCount] = await Promise.all([
+    const [works, services, blog, unreadCount, inquiriesCount] = await Promise.all([
       getJsonFile<WorkCase[]>(c.env.CONTENT_GITHUB_TOKEN, "content/works.json"),
       getJsonFile<ServiceMenu[]>(c.env.CONTENT_GITHUB_TOKEN, "content/services.json"),
+      getJsonFile<BlogPost[]>(c.env.CONTENT_GITHUB_TOKEN, "content/blog.json"),
       getUnreadCount(c.env),
       c.env.INQUIRIES.list({ prefix: "inquiry:" }).then((r) => r.keys.length),
     ]);
@@ -92,6 +101,7 @@ app.get("/", async (c) => {
       overviewPage({
         worksCount: works.value.length,
         servicesCount: services.value.length,
+        blogCount: blog.value.length,
         unreadCount,
         inquiriesCount,
       })
@@ -101,6 +111,7 @@ app.get("/", async (c) => {
       overviewPage({
         worksCount: 0,
         servicesCount: 0,
+        blogCount: 0,
         unreadCount: 0,
         inquiriesCount: 0,
         message: { type: "error", text: (err as Error).message },
@@ -220,6 +231,46 @@ app.post("/seo", async (c) => {
     render: async (message) => {
       const unreadCount = await getUnreadCount(c.env);
       return seoPage({ seo, unreadCount, message });
+    },
+  });
+});
+
+app.get("/blog", async (c) => {
+  const [blog, unreadCount] = await Promise.all([
+    getJsonFile<BlogPost[]>(c.env.CONTENT_GITHUB_TOKEN, "content/blog.json"),
+    getUnreadCount(c.env),
+  ]);
+  return c.html(blogPage({ posts: blog.value, unreadCount }));
+});
+
+app.post("/blog", async (c) => {
+  const body = await c.req.parseBody();
+  const rowCount = Number(body.rowCount ?? 0);
+  const items: BlogPost[] = [];
+
+  for (let i = 0; i < rowCount; i++) {
+    const title = String(body[`title_${i}`] ?? "").trim();
+    const isDelete = body[`delete_${i}`] === "on";
+    if (!title || isDelete) continue;
+
+    items.push({
+      slug: slugify(title),
+      title,
+      excerpt: String(body[`excerpt_${i}`] ?? "").trim(),
+      publishedAt:
+        String(body[`publishedAt_${i}`] ?? "").trim() ||
+        new Date().toISOString().slice(0, 10),
+      body: String(body[`body_${i}`] ?? "").trim(),
+    });
+  }
+
+  return saveContentAndRedisplay(c, {
+    path: "content/blog.json",
+    value: items,
+    label: "お知らせ",
+    render: async (message) => {
+      const unreadCount = await getUnreadCount(c.env);
+      return blogPage({ posts: items, unreadCount, message });
     },
   });
 });

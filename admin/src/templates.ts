@@ -1,7 +1,9 @@
 import {
   SEO_PAGES,
+  SPARE_BLOG_ROWS,
   SPARE_SERVICES_ROWS,
   SPARE_WORKS_ROWS,
+  type BlogPost,
   type Inquiry,
   type ServiceMenu,
   type SeoMap,
@@ -234,12 +236,13 @@ export function loginPage(errorMessage?: string): string {
   return htmlShell("ログイン", body);
 }
 
-type NavKey = "overview" | "works" | "services" | "seo" | "inquiries";
+type NavKey = "overview" | "works" | "services" | "blog" | "seo" | "inquiries";
 
 const NAV_ITEMS: { key: NavKey; href: string; label: string }[] = [
   { key: "overview", href: "/", label: "ダッシュボード" },
   { key: "works", href: "/works", label: "実績" },
   { key: "services", href: "/services", label: "料金" },
+  { key: "blog", href: "/blog", label: "お知らせ" },
   { key: "seo", href: "/seo", label: "SEO" },
   { key: "inquiries", href: "/inquiries", label: "お問い合わせ" },
 ];
@@ -282,6 +285,7 @@ function banner(message?: { type: "ok" | "error"; text: string }): string {
 export function overviewPage(data: {
   worksCount: number;
   servicesCount: number;
+  blogCount: number;
   unreadCount: number;
   inquiriesCount: number;
   message?: { type: "ok" | "error"; text: string };
@@ -300,6 +304,11 @@ export function overviewPage(data: {
         <div class="num">${data.servicesCount}</div>
         <div class="label">サービス・料金</div>
         <a href="/services">編集する →</a>
+      </div>
+      <div class="card">
+        <div class="num">${data.blogCount}</div>
+        <div class="label">お知らせ</div>
+        <a href="/blog">編集する →</a>
       </div>
       <div class="card">
         <div class="num">${data.unreadCount} <span style="font-size:14px;color:#5b6472">/ ${data.inquiriesCount}</span></div>
@@ -418,6 +427,55 @@ export function servicesPage(data: {
     </form>
   `;
   return shell({ title: "料金", active: "services", unreadCount: data.unreadCount, content });
+}
+
+function blogFieldset(index: number, post?: BlogPost): string {
+  return `
+    <fieldset>
+      <legend>お知らせ ${index + 1}${post ? "" : "(新規)"}</legend>
+      <label>タイトル</label>
+      <input type="text" name="title_${index}" value="${esc(post?.title)}" />
+      <label>公開日 (YYYY-MM-DD)</label>
+      <input type="text" name="publishedAt_${index}" value="${esc(post?.publishedAt)}" placeholder="2026-08-25" />
+      <label>一覧に表示する概要文</label>
+      <textarea name="excerpt_${index}">${esc(post?.excerpt)}</textarea>
+      <label>本文(段落を分けたい場合は空行を1行入れてください)</label>
+      <textarea name="body_${index}" style="min-height:180px">${esc(post?.body)}</textarea>
+      ${
+        post
+          ? `<div class="checkbox-row">
+        <input type="checkbox" id="delete_${index}" name="delete_${index}" />
+        <label for="delete_${index}" style="margin:0;color:#b3261e">このお知らせを削除する</label>
+      </div>`
+          : ""
+      }
+    </fieldset>
+  `;
+}
+
+export function blogPage(data: {
+  posts: BlogPost[];
+  unreadCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const rows = [
+    ...data.posts.map((p, i) => blogFieldset(i, p)),
+    ...Array.from({ length: SPARE_BLOG_ROWS }, (_, i) =>
+      blogFieldset(data.posts.length + i)
+    ),
+  ].join("");
+
+  const content = `
+    <h1>お知らせ</h1>
+    <h2>公開サイトの「お知らせ」ページに表示される内容です(新しい日付順に自動で並びます)</h2>
+    ${banner(data.message)}
+    <form method="post" action="/blog">
+      <input type="hidden" name="rowCount" value="${data.posts.length + SPARE_BLOG_ROWS}" />
+      ${rows}
+      <div class="save-bar"><button class="primary" type="submit">保存する</button></div>
+    </form>
+  `;
+  return shell({ title: "お知らせ", active: "blog", unreadCount: data.unreadCount, content });
 }
 
 export function seoPage(data: {

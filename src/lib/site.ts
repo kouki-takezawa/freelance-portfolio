@@ -11,6 +11,9 @@ export const siteConfig = {
     { href: "/", label: "トップ" },
     { href: "/services", label: "サービス・料金" },
     { href: "/works", label: "制作事例" },
+    { href: "/estimate", label: "かんたん見積もり" },
+    { href: "/blog", label: "お知らせ" },
+    { href: "/about", label: "プロフィール" },
     { href: "/contact", label: "お問い合わせ" },
   ],
 } as const;
