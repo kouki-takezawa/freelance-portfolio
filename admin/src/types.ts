@@ -87,3 +87,11 @@ export const SEO_PAGES: { path: string; key: string; label: string }[] = [
   { path: "/contact", key: "contact", label: "お問い合わせ" },
   { path: "/privacy", key: "privacy", label: "プライバシーポリシー" },
 ];
+
+export type SocialCalendarEntry = {
+  day: number;
+  category: string;
+  caption: string;
+  cardHeadline: string;
+  posted: boolean;
+};
