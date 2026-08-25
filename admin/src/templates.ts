@@ -17,7 +17,7 @@ export function esc(value: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
-const PUBLIC_SITE_URL = "https://freelance-hp.takechin001031.workers.dev";
+const PUBLIC_SITE_URL = "https://freelance-hp.yorisoi-works.workers.dev";
 
 const baseStyle = `
   :root { color-scheme: light; }

@@ -4,7 +4,7 @@
 
 ## 公開用サイト
 
-**https://freelance-hp.takechin001031.workers.dev**
+**https://freelance-hp.yorisoi-works.workers.dev**
 
 来訪者向けの本体サイト。`main`ブランチへのpushで [.github/workflows/deploy.yml](.github/workflows/deploy.yml) が自動的にビルド・デプロイする。
 
@@ -18,7 +18,7 @@ npm run build     # 静的サイトを out/ に出力
 
 ## 管理者側画面
 
-**https://freelance-hp-admin.takechin001031.workers.dev**
+**https://freelance-hp-admin.yorisoi-works.workers.dev**
 
 実績・料金・SEO(ページごとのタイトル/description)をブラウザから編集するための画面。`admin/`ディレクトリの独立したCloudflare Workerアプリ(Hono製)。`admin/**`に変更があったときのみ [.github/workflows/deploy-admin.yml](.github/workflows/deploy-admin.yml) が自動デプロイする。
 
