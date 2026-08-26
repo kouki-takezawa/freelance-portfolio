@@ -1,7 +1,9 @@
 "use client";
 
+import Script from "next/script";
 import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { siteConfig } from "@/lib/site";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -149,6 +151,13 @@ export default function ContactForm() {
           placeholder="現状のお悩みやご要望をお聞かせください"
         />
       </label>
+
+      {siteConfig.turnstileSiteKey && (
+        <>
+          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" async defer />
+          <div className="cf-turnstile" data-sitekey={siteConfig.turnstileSiteKey} />
+        </>
+      )}
 
       {status === "error" && (
         <p className="text-sm text-red-600">{errorMessage}</p>

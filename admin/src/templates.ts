@@ -14,6 +14,7 @@ import {
   type WorkCase,
 } from "./types";
 import type { AnalyticsSummary } from "./analytics";
+import type { TrashItem } from "./trash";
 
 export function esc(value: unknown): string {
   return String(value ?? "")
@@ -159,6 +160,9 @@ const baseStyle = `
   .card .num { font-size: 28px; font-weight: 700; color: #1e3a5f; }
   .card .label { font-size: 13px; color: #5b6472; margin-top: 4px; }
   .card a { font-size: 13px; color: #1e3a5f; }
+  .inquiry-filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 20px; }
+  .filter-chip { text-decoration: none; display: inline-block; padding: 6px 16px; border: 1px solid #e4e7ec; border-radius: 999px; color: #5b6472; font-size: 12px; font-weight: 700; background: #fff; }
+  .filter-chip.active { border-color: #1e3a5f; color: #1e3a5f; background: #eef2f7; }
   .inquiry-card { background: #fff; border: 1px solid #e4e7ec; border-radius: 12px; padding: 18px; margin-bottom: 14px; }
   .inquiry-card.unread { border-left: 4px solid #e05252; }
   .inquiry-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #5b6472; margin-bottom: 10px; }
@@ -335,7 +339,8 @@ type NavKey =
   | "works"
   | "services"
   | "blog"
-  | "seo";
+  | "seo"
+  | "trash";
 
 const NAV_SECTIONS: {
   label: string;
@@ -349,6 +354,7 @@ const NAV_SECTIONS: {
       { key: "revenue", href: "/revenue", label: "売上" },
       { key: "inquiries", href: "/inquiries", label: "お問い合わせ" },
       { key: "analytics", href: "/analytics", label: "アクセス解析" },
+      { key: "trash", href: "/trash", label: "ゴミ箱" },
     ],
   },
   {
@@ -677,14 +683,34 @@ function formatDate(ms: number): string {
   return new Date(ms).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
 }
 
+function defaultReplyTemplate(name: string): string {
+  return `${name} 様\n\nお問い合わせいただきありがとうございます。ヨリソイワークスです。\n\n\n\n---\nヨリソイワークス`;
+}
+
 export function inquiriesPage(data: {
   inquiries: Inquiry[];
+  allTypes: string[];
   unreadCount: number;
+  currentFilter: { unreadOnly: boolean; type: string };
   message?: { type: "ok" | "error"; text: string };
 }): string {
+  const { unreadOnly, type } = data.currentFilter;
+  const filterBar = `
+    <div class="inquiry-filter-bar">
+      <a href="/inquiries" class="filter-chip ${!unreadOnly && !type ? "active" : ""}">すべて</a>
+      <a href="/inquiries?unread=1" class="filter-chip ${unreadOnly ? "active" : ""}">未読のみ</a>
+      ${data.allTypes
+        .map(
+          (t) =>
+            `<a href="/inquiries?type=${encodeURIComponent(t)}" class="filter-chip ${type === t ? "active" : ""}">${esc(t)}</a>`
+        )
+        .join("")}
+    </div>
+  `;
+
   const list =
     data.inquiries.length === 0
-      ? `<p class="hint">まだお問い合わせはありません。</p>`
+      ? `<p class="hint">${unreadOnly || type ? "条件に一致するお問い合わせはありません。" : "まだお問い合わせはありません。"}</p>`
       : data.inquiries
           .map(
             (inq) => `
@@ -714,7 +740,7 @@ export function inquiriesPage(data: {
           <details class="inquiry-reply-toggle" ${inq.replies && inq.replies.length > 0 ? "" : "open"}>
             <summary>返信する</summary>
             <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/reply" class="inquiry-reply-form">
-              <textarea name="message" rows="3" placeholder="返信内容を入力してください" required></textarea>
+              <textarea name="message" rows="6">${esc(defaultReplyTemplate(inq.name))}</textarea>
               <button class="small" type="submit">返信を送信</button>
             </form>
           </details>
@@ -736,9 +762,49 @@ export function inquiriesPage(data: {
     <h1>お問い合わせ</h1>
     <h2>公開サイトのお問い合わせフォームから送信された内容です</h2>
     ${banner(data.message)}
+    ${filterBar}
     ${list}
   `;
   return shell({ title: "お問い合わせ", active: "inquiries", unreadCount: data.unreadCount, content });
+}
+
+export function trashPage(data: {
+  items: TrashItem[];
+  unreadCount: number;
+  message?: { type: "ok" | "error"; text: string };
+}): string {
+  const list =
+    data.items.length === 0
+      ? `<p class="hint">ゴミ箱は空です。</p>`
+      : data.items
+          .map(
+            (item) => `
+        <div class="inquiry-card">
+          <div class="inquiry-meta">
+            <span>${item.kind === "inquiry" ? "お問い合わせ" : "受注"}</span>
+            <span>削除日時: ${formatDate(item.deletedAt)}</span>
+          </div>
+          <div><strong>${esc(item.summary)}</strong></div>
+          <div class="inquiry-actions">
+            <form method="post" action="/trash/${encodeURIComponent(item.key)}/restore">
+              <button class="small" type="submit">元に戻す</button>
+            </form>
+            <form method="post" action="/trash/${encodeURIComponent(item.key)}/purge" onsubmit="return confirm('完全に削除します。元に戻せません。よろしいですか？');">
+              <button class="small" type="submit" style="color:#b3261e;border-color:#b3261e">完全に削除</button>
+            </form>
+          </div>
+        </div>
+      `
+          )
+          .join("");
+
+  const content = `
+    <h1>ゴミ箱</h1>
+    <h2>削除したお問い合わせ・受注データです。30日間はここに残り、その後自動的に完全削除されます</h2>
+    ${banner(data.message)}
+    ${list}
+  `;
+  return shell({ title: "ゴミ箱", active: "trash", unreadCount: data.unreadCount, content });
 }
 
 function isOverdue(order: Order): boolean {
@@ -793,6 +859,7 @@ export function ordersListPage(data: {
     ${banner(data.message)}
     <div class="add-bar">
       <a href="/orders/new" class="primary" style="text-decoration:none;display:inline-block;border-radius:999px;padding:10px 28px;font-size:14px;font-weight:700;background:#1e3a5f;color:#fff">+ 新規受注を追加</a>
+      <a href="/orders/export.csv" class="small" style="text-decoration:none;display:inline-block;padding:9px 20px;border:1px solid #1e3a5f;border-radius:999px;color:#1e3a5f;font-size:13px;font-weight:700;margin-left:10px">CSVダウンロード</a>
     </div>
     <div class="table-wrap">
       <table class="data">

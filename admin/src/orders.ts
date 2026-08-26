@@ -45,6 +45,46 @@ export async function deleteOrder(env: { DATA: KVNamespace }, key: string): Prom
   await env.DATA.delete(key);
 }
 
+function csvCell(value: string | number): string {
+  const s = String(value);
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+export function ordersToCsv(orders: Order[]): string {
+  const header = [
+    "クライアント名",
+    "サービス種別",
+    "金額",
+    "受注日",
+    "納期",
+    "進捗ステータス",
+    "入金状況",
+    "入金日",
+    "メモ",
+  ];
+  const rows = [...orders]
+    .sort((a, b) => (a.orderDate < b.orderDate ? 1 : -1))
+    .map((o) =>
+      [
+        o.clientName,
+        o.serviceType,
+        o.amount,
+        o.orderDate,
+        o.dueDate,
+        o.status,
+        o.paymentStatus,
+        o.paidDate,
+        o.notes,
+      ]
+        .map(csvCell)
+        .join(",")
+    );
+  // Excelで文字化けしないようUTF-8 BOMを付与
+  const BOM = String.fromCharCode(0xfeff);
+  return BOM + [header.join(","), ...rows].join("\r\n") + "\r\n";
+}
+
 function monthKey(dateStr: string): string {
   return dateStr.slice(0, 7); // YYYY-MM
 }
