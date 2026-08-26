@@ -4,7 +4,7 @@ import { services } from "@/lib/services";
 import { getSeo } from "@/lib/seo";
 import ServiceIcon from "@/components/illustrations/ServiceIcon";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import InteractiveBlob from "@/components/decor/InteractiveBlob";
+import TapIcon from "@/components/decor/TapIcon";
 
 const seo = getSeo("/services");
 const iconKinds = ["hp", "lp", "system", "line"] as const;
@@ -32,23 +32,15 @@ const comparisonRows = [
 
 export default function ServicesPage() {
   return (
-    <div className="relative overflow-hidden">
-      <InteractiveBlob
-        tone="sky"
-        seed={6}
-        className="-z-10 -right-24 top-0 h-80 w-80"
-      />
-      <InteractiveBlob
-        tone="ice"
-        seed={7}
-        className="-z-10 -left-20 top-[60%] h-64 w-64"
-      />
-      <div className="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
+    <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
       <Breadcrumbs items={[{ label: "サービス・料金" }]} />
       <p className="mt-4 text-sm font-semibold text-accent">Services</p>
-      <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-        サービス・料金
-      </h1>
+      <div className="mt-3 flex items-center gap-3">
+        <TapIcon kind="tag" />
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          サービス・料金
+        </h1>
+      </div>
       <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
         以下は目安の料金です。事業内容やご要望によって前後しますので、まずはお気軽にご相談ください。相談・お見積りは無料です。
       </p>
@@ -145,7 +137,6 @@ export default function ServicesPage() {
         >
           無料で相談する
         </Link>
-      </div>
       </div>
     </div>
   );
