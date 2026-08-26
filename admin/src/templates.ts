@@ -719,6 +719,7 @@ export function inquiriesPage(data: {
             </form>
           </details>
           <div class="inquiry-actions">
+            <a href="/orders/new?fromInquiry=${encodeURIComponent(inq.key)}" class="small" style="text-decoration:none;display:inline-block;padding:5px 14px;border:1px solid #1e3a5f;border-radius:999px;color:#1e3a5f;font-size:12px;font-weight:700">この内容で受注を作成</a>
             <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/toggle-read">
               <button class="small" type="submit">${inq.read ? "未読にする" : "既読にする"}</button>
             </form>
@@ -822,15 +823,17 @@ export function ordersListPage(data: {
 
 export function orderFormPage(data: {
   order?: Order;
+  prefill?: Partial<Order>;
   unreadCount: number;
   overdueCount: number;
   message?: { type: "ok" | "error"; text: string };
 }): string {
-  const o = data.order;
-  const action = o ? `/orders/${encodeURIComponent(o.key)}` : "/orders";
+  const isEdit = Boolean(data.order);
+  const o = data.order ?? data.prefill;
+  const action = data.order ? `/orders/${encodeURIComponent(data.order.key)}` : "/orders";
 
   const content = `
-    <h1>${o ? "受注を編集" : "受注を新規追加"}</h1>
+    <h1>${isEdit ? "受注を編集" : "受注を新規追加"}</h1>
     <h2>LINEなど外部で受けたご依頼の情報を入力してください</h2>
     ${banner(data.message)}
     <form method="post" action="${action}">
@@ -845,7 +848,7 @@ export function orderFormPage(data: {
           </div>
           <div>
             <label>金額(円)</label>
-            <input type="text" inputmode="numeric" name="amount" value="${o ? o.amount : ""}" placeholder="150000" />
+            <input type="text" inputmode="numeric" name="amount" value="${o?.amount ? esc(o.amount) : ""}" placeholder="150000" />
           </div>
         </div>
 
