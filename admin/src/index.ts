@@ -6,11 +6,12 @@ import { getAnalyticsSummary, getTodayPageviews } from "./analytics";
 import {
   computeRevenue,
   createOrder,
-  deleteOrder,
   getOrder,
   listOrders,
+  ordersToCsv,
   putOrder,
 } from "./orders";
+import { listTrash, moveToTrash, purgeTrash, restoreFromTrash } from "./trash";
 import {
   analyticsPage,
   blogPage,
@@ -22,6 +23,7 @@ import {
   revenuePage,
   seoPage,
   servicesPage,
+  trashPage,
   worksPage,
 } from "./templates";
 import {
@@ -92,6 +94,23 @@ async function sendReplyEmail(
     return { ok: true };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
+  }
+}
+
+async function sendSecurityAlertEmail(env: Bindings, subject: string, text: string): Promise<void> {
+  if (!env.RESEND_API_KEY) return;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ from: NOTIFY_FROM, to: OWNER_EMAIL, subject, text }),
+    });
+    if (!res.ok) console.error("Resend API error", res.status, await res.text());
+  } catch (err) {
+    console.error("Failed to send security alert email", err);
   }
 }
 
@@ -181,9 +200,23 @@ app.post("/login", async (c) => {
   const okPassword = timingSafeEqual(password, c.env.ADMIN_PASSWORD);
 
   if (!okEmail || !okPassword) {
-    await c.env.DATA.put(rateLimitKey, String(attempts + 1), {
+    const nextAttempts = attempts + 1;
+    await c.env.DATA.put(rateLimitKey, String(nextAttempts), {
       expirationTtl: LOGIN_RATE_LIMIT_WINDOW_SECONDS,
     });
+    if (nextAttempts === LOGIN_RATE_LIMIT_MAX_ATTEMPTS) {
+      c.executionCtx.waitUntil(
+        sendSecurityAlertEmail(
+          c.env,
+          "【セキュリティ警告】管理画面へのログイン試行が多発しています",
+          [
+            `IPアドレス ${ip} から、短時間に${LOGIN_RATE_LIMIT_MAX_ATTEMPTS}回のログイン失敗がありました。`,
+            "この後しばらくの間、このIPからのログインはブロックされます。",
+            "心当たりがない場合は、ADMIN_PASSWORDの変更を検討してください。",
+          ].join("\n")
+        )
+      );
+    }
     return c.html(loginPage("メールアドレスまたはパスワードが違います"), 401);
   }
 
@@ -463,6 +496,18 @@ app.get("/orders", async (c) => {
   );
 });
 
+app.get("/orders/export.csv", async (c) => {
+  const orders = await listOrders(c.env);
+  const csv = ordersToCsv(orders);
+  const today = new Date().toISOString().slice(0, 10);
+  return new Response(csv, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="orders-${today}.csv"`,
+    },
+  });
+});
+
 app.get("/orders/new", async (c) => {
   const [orders, unreadCount] = await Promise.all([
     listOrders(c.env),
@@ -535,7 +580,11 @@ app.post("/orders/:key", async (c) => {
 
 app.post("/orders/:key/delete", async (c) => {
   const key = decodeURIComponent(c.req.param("key"));
-  await deleteOrder(c.env, key);
+  const raw = await c.env.DATA.get(key);
+  if (raw) {
+    const order = JSON.parse(raw) as Omit<Order, "key">;
+    await moveToTrash(c.env, "order", key, `${order.clientName}(${order.serviceType})`, raw);
+  }
   return c.redirect("/orders");
 });
 
@@ -594,7 +643,24 @@ app.get("/analytics", async (c) => {
 app.get("/inquiries", async (c) => {
   const inquiries = await listInquiries(c.env);
   const unreadCount = inquiries.filter((i) => !i.read).length;
-  return c.html(inquiriesPage({ inquiries, unreadCount }));
+
+  const unreadOnly = c.req.query("unread") === "1";
+  const type = c.req.query("type") ?? "";
+  const filtered = inquiries.filter((i) => {
+    if (unreadOnly && i.read) return false;
+    if (type && i.inquiryType !== type) return false;
+    return true;
+  });
+  const allTypes = [...new Set(inquiries.map((i) => i.inquiryType))].filter(Boolean);
+
+  return c.html(
+    inquiriesPage({
+      inquiries: filtered,
+      allTypes,
+      unreadCount,
+      currentFilter: { unreadOnly, type },
+    })
+  );
 });
 
 app.post("/inquiries/:key/toggle-read", async (c) => {
@@ -612,8 +678,29 @@ app.post("/inquiries/:key/toggle-read", async (c) => {
 
 app.post("/inquiries/:key/delete", async (c) => {
   const key = decodeURIComponent(c.req.param("key"));
-  await c.env.DATA.delete(key);
+  const raw = await c.env.DATA.get(key);
+  if (raw) {
+    const inquiry = JSON.parse(raw) as Omit<Inquiry, "key">;
+    await moveToTrash(c.env, "inquiry", key, `${inquiry.name} <${inquiry.email}>`, raw);
+  }
   return c.redirect("/inquiries");
+});
+
+app.get("/trash", async (c) => {
+  const [items, unreadCount] = await Promise.all([listTrash(c.env), getUnreadCount(c.env)]);
+  return c.html(trashPage({ items, unreadCount }));
+});
+
+app.post("/trash/:key/restore", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  await restoreFromTrash(c.env, key);
+  return c.redirect("/trash");
+});
+
+app.post("/trash/:key/purge", async (c) => {
+  const key = decodeURIComponent(c.req.param("key"));
+  await purgeTrash(c.env, key);
+  return c.redirect("/trash");
 });
 
 app.post("/inquiries/:key/reply", async (c) => {
@@ -623,10 +710,12 @@ app.post("/inquiries/:key/reply", async (c) => {
 
   const inquiries = await listInquiries(c.env);
   const unreadCount = inquiries.filter((i) => !i.read).length;
+  const allTypes = [...new Set(inquiries.map((i) => i.inquiryType))].filter(Boolean);
+  const currentFilter = { unreadOnly: false, type: "" };
 
   const raw = await c.env.DATA.get(key);
   if (!raw || !message) {
-    return c.html(inquiriesPage({ inquiries, unreadCount }));
+    return c.html(inquiriesPage({ inquiries, allTypes, unreadCount, currentFilter }));
   }
 
   const inquiry = { ...(JSON.parse(raw) as Inquiry), key };
@@ -636,7 +725,9 @@ app.post("/inquiries/:key/reply", async (c) => {
     return c.html(
       inquiriesPage({
         inquiries,
+        allTypes,
         unreadCount,
+        currentFilter,
         message: { type: "error", text: `返信の送信に失敗しました: ${result.error}` },
       }),
       500
@@ -654,7 +745,9 @@ app.post("/inquiries/:key/reply", async (c) => {
   return c.html(
     inquiriesPage({
       inquiries: refreshed,
+      allTypes: [...new Set(refreshed.map((i) => i.inquiryType))].filter(Boolean),
       unreadCount: refreshed.filter((i) => !i.read).length,
+      currentFilter,
       message: { type: "ok", text: "返信を送信しました。" },
     })
   );

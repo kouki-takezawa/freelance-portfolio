@@ -11,6 +11,8 @@ export const siteConfig = {
   threadsUrl: "https://www.threads.net/@yorisou.works",
   instagramUrl: "https://www.instagram.com/yorisou.works",
   webAnalyticsToken: "41c46914ed57468e9603af4704b3119f",
+  // TODO: Cloudflare TurnstileでWidget(サイトキー)を発行したら設定。空文字の間はウィジェットを表示しない
+  turnstileSiteKey: "",
   serviceArea: "全国対応(リモート) / 栃木県内は対面相談も可能",
   // ヘッダーに表示する主要ナビ(絞り込み済み)
   primaryNavLinks: [
