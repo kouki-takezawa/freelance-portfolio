@@ -4,6 +4,7 @@ import { services } from "@/lib/services";
 import { getSeo } from "@/lib/seo";
 import ServiceIcon from "@/components/illustrations/ServiceIcon";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import InteractiveBlob from "@/components/decor/InteractiveBlob";
 
 const seo = getSeo("/services");
 const iconKinds = ["hp", "lp", "system", "line"] as const;
@@ -31,7 +32,18 @@ const comparisonRows = [
 
 export default function ServicesPage() {
   return (
-    <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+    <div className="relative overflow-hidden">
+      <InteractiveBlob
+        tone="sky"
+        seed={6}
+        className="-z-10 -right-24 top-0 h-80 w-80"
+      />
+      <InteractiveBlob
+        tone="ice"
+        seed={7}
+        className="-z-10 -left-20 top-[60%] h-64 w-64"
+      />
+      <div className="relative mx-auto max-w-5xl px-6 py-16 sm:py-20">
       <Breadcrumbs items={[{ label: "サービス・料金" }]} />
       <p className="mt-4 text-sm font-semibold text-accent">Services</p>
       <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -133,6 +145,7 @@ export default function ServicesPage() {
         >
           無料で相談する
         </Link>
+      </div>
       </div>
     </div>
   );
