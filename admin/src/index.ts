@@ -25,6 +25,7 @@ import {
   worksPage,
 } from "./templates";
 import {
+  ORDER_SERVICE_TYPES,
   ORDER_STATUSES,
   PAYMENT_STATUSES,
   SEO_PAGES,
@@ -468,8 +469,40 @@ app.get("/orders/new", async (c) => {
     getUnreadCount(c.env),
   ]);
   const revenue = computeRevenue(orders);
-  return c.html(orderFormPage({ unreadCount, overdueCount: revenue.overdueCount }));
+
+  const fromInquiry = c.req.query("fromInquiry");
+  const prefill = fromInquiry ? await buildOrderPrefillFromInquiry(c.env, fromInquiry) : undefined;
+
+  return c.html(orderFormPage({ prefill, unreadCount, overdueCount: revenue.overdueCount }));
 });
+
+async function buildOrderPrefillFromInquiry(
+  env: Bindings,
+  inquiryKey: string
+): Promise<Partial<Order> | undefined> {
+  const raw = await env.DATA.get(inquiryKey);
+  if (!raw) return undefined;
+  const inquiry = JSON.parse(raw) as Inquiry;
+
+  const serviceType = (ORDER_SERVICE_TYPES as readonly string[]).includes(inquiry.inquiryType)
+    ? inquiry.inquiryType
+    : "その他";
+
+  return {
+    clientName: inquiry.name,
+    serviceType,
+    orderDate: new Date().toISOString().slice(0, 10),
+    notes: [
+      `お問い合わせから自動作成(${new Date(inquiry.receivedAt).toLocaleDateString("ja-JP")})`,
+      `メール: ${inquiry.email}`,
+      inquiry.budget ? `予算感: ${inquiry.budget}` : "",
+      "",
+      inquiry.message,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  };
+}
 
 app.post("/orders", async (c) => {
   const body = await c.req.parseBody();
