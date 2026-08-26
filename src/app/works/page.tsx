@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { works } from "@/lib/works";
 import { getSeo } from "@/lib/seo";
-import ServiceIcon from "@/components/illustrations/ServiceIcon";
+import WorkBanner from "@/components/illustrations/WorkBanner";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { categoryVisual } from "@/lib/categoryVisual";
 
@@ -38,12 +38,8 @@ export default function WorksPage() {
               key={work.slug}
               className={`overflow-hidden rounded-2xl border border-t-4 border-border ${visual.border}`}
             >
-              <div className={`flex h-28 items-center justify-center ${visual.bg} text-accent`}>
-                <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-background/80">
-                  <span className="scale-150">
-                    <ServiceIcon kind={visual.icon} />
-                  </span>
-                </span>
+              <div className={`h-32 ${visual.bg} text-accent`}>
+                <WorkBanner kind={visual.icon} />
               </div>
               <div className="p-8">
                 <div className="flex items-center gap-2">

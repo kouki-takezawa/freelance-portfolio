@@ -1,18 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { siteConfig } from "@/lib/site";
 
 export default function MobileMenu() {
   const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
 
-  // `open` only ever becomes true via a client-side click, so document
-  // is always available by the time this is rendered — no SSR/mount
-  // guard needed for the portal target.
+  // 開いている間: 最初のリンクへフォーカス移動、Tabをパネル内に閉じ込め、
+  // Escで閉じてトグルボタンへフォーカスを戻し、背面スクロールを止める。
+  useEffect(() => {
+    if (!open) return;
+
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const focusable = panel.querySelectorAll<HTMLElement>('a[href], button:not([disabled])');
+    focusable[0]?.focus();
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        toggleRef.current?.focus();
+        return;
+      }
+      if (event.key !== "Tab" || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   const overlay = (
-    <nav className="fixed inset-x-0 top-[69px] bottom-0 z-50 overflow-y-auto bg-background px-6 py-4 sm:hidden">
+    <nav
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="メニュー"
+      className="fixed inset-x-0 top-[69px] bottom-0 z-50 overflow-y-auto bg-background px-6 py-4 sm:hidden"
+    >
       <ul className="flex flex-col gap-1">
         {[...siteConfig.navLinks, { href: "/privacy", label: "プライバシーポリシー" }].map(
           (link) => (
@@ -34,6 +79,7 @@ export default function MobileMenu() {
   return (
     <div className="sm:hidden">
       <button
+        ref={toggleRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
