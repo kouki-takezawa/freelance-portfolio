@@ -6,6 +6,7 @@ import HeroIllustration from "@/components/illustrations/HeroIllustration";
 import ServiceIcon from "@/components/illustrations/ServiceIcon";
 import { blogPosts } from "@/lib/blog";
 import WorksCarousel from "@/components/WorksCarousel";
+import InteractiveBlob from "@/components/decor/InteractiveBlob";
 
 const jumpLinks = [
   { href: "#strengths", label: "選ばれる理由" },
@@ -110,6 +111,16 @@ export default function Home() {
   return (
     <div>
       <section className="relative overflow-hidden bg-[radial-gradient(circle,_#e4e7ec_1px,_transparent_1px)] bg-[length:24px_24px]">
+        <InteractiveBlob
+          tone="sky"
+          seed={0}
+          className="-z-10 -right-16 -top-20 h-80 w-80 sm:h-[26rem] sm:w-[26rem]"
+        />
+        <InteractiveBlob
+          tone="ice"
+          seed={1}
+          className="-z-10 -left-24 bottom-0 h-64 w-64"
+        />
         <div className="mx-auto grid max-w-5xl items-center gap-10 px-6 pt-16 pb-16 sm:pt-24 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-6">
           <div>
             <p className="text-sm font-semibold tracking-wide text-accent">
@@ -185,7 +196,12 @@ export default function Home() {
         </div>
       </nav>
 
-      <section id="strengths" className="border-t border-border bg-surface">
+      <section id="strengths" className="relative overflow-hidden border-t border-border bg-surface">
+        <InteractiveBlob
+          tone="deep"
+          seed={2}
+          className="-z-10 -right-20 top-1/3 h-72 w-72"
+        />
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <div className="flex items-end justify-between gap-4">
             <h2 className="text-xl font-bold sm:text-2xl">選ばれる理由</h2>
@@ -253,7 +269,12 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="flow" className="border-t border-border bg-surface">
+      <section id="flow" className="relative overflow-hidden border-t border-border bg-surface">
+        <InteractiveBlob
+          tone="ice"
+          seed={3}
+          className="-z-10 -left-16 bottom-0 h-64 w-64"
+        />
         <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <h2 className="text-xl font-bold sm:text-2xl">ご依頼の流れ</h2>
           <p className="mt-2 text-sm text-muted">
@@ -310,7 +331,12 @@ export default function Home() {
         </section>
       )}
 
-      <section id="faq" className="border-t border-border bg-surface">
+      <section id="faq" className="relative overflow-hidden border-t border-border bg-surface">
+        <InteractiveBlob
+          tone="sky"
+          seed={4}
+          className="-z-10 -right-20 top-10 h-72 w-72"
+        />
         <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
           <h2 className="text-xl font-bold sm:text-2xl">よくあるご質問</h2>
           <div className="mt-8 flex flex-col gap-3">
@@ -336,7 +362,12 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 py-16 sm:py-24 text-center">
+      <section className="relative mx-auto max-w-5xl overflow-hidden px-6 py-16 sm:py-24 text-center">
+        <InteractiveBlob
+          tone="deep"
+          seed={5}
+          className="-z-10 left-1/2 top-0 h-80 w-80 -translate-x-1/2"
+        />
         <h2 className="text-2xl font-bold sm:text-3xl">
           まずはお気軽にご相談ください
         </h2>

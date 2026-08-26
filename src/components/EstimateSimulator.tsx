@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { services } from "@/lib/services";
 
 type ServiceType = "hp" | "lp" | "system" | "line";
 
@@ -76,6 +77,7 @@ export default function EstimateSimulator() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
   const service = SERVICES.find((s) => s.type === serviceType)!;
+  const serviceScope = services.find((s) => s.slug === serviceType)?.scope ?? [];
 
   const total = useMemo(() => {
     const optionsTotal = service.options
@@ -134,6 +136,28 @@ export default function EstimateSimulator() {
           ))}
         </div>
       </div>
+
+      {serviceScope.length > 0 && (
+        <div className="rounded-xl border border-border bg-surface/60 p-4">
+          <p className="text-sm font-semibold">
+            基本料金({formatYen(service.base)}円〜)に含まれる内容
+          </p>
+          <ul className="mt-3 flex flex-col gap-1.5">
+            {serviceScope.map((item) => (
+              <li
+                key={item}
+                className="flex items-start gap-2 text-xs text-foreground/80 sm:text-sm"
+              >
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                {item}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-muted">
+            これを超える内容は下記のオプションを追加するか、正式なお見積り時にご相談ください。
+          </p>
+        </div>
+      )}
 
       {service.options.length > 0 && (
         <div>
