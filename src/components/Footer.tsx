@@ -30,7 +30,10 @@ export default function Footer() {
           </div>
         </div>
 
-        <nav className="mt-10 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border pt-8 text-sm text-muted sm:grid-cols-4">
+        <nav
+          aria-label="フッターナビゲーション"
+          className="mt-10 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border pt-8 text-sm text-muted sm:grid-cols-4"
+        >
           {siteConfig.navLinks.map((link) => (
             <Link
               key={link.href}

@@ -49,7 +49,10 @@ export default function WorksCarousel({ works }: { works: WorkCase[] }) {
 
       <div
         ref={scrollerRef}
-        className="mt-6 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2"
+        role="region"
+        aria-label="制作事例一覧(横スクロール)"
+        tabIndex={0}
+        className="mt-6 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
       >
         {works.map((work) => {
           const visual = categoryVisual(work.category);

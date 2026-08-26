@@ -17,6 +17,7 @@ export const siteConfig = {
   // ヘッダーに表示する主要ナビ(絞り込み済み)
   primaryNavLinks: [
     { href: "/services", label: "サービス・料金" },
+    { href: "/estimate", label: "かんたん見積もり" },
     { href: "/works", label: "制作事例" },
     { href: "/blog", label: "お知らせ" },
     { href: "/contact", label: "お問い合わせ" },
