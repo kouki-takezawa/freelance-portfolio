@@ -161,16 +161,22 @@ const baseStyle = `
   .card a { font-size: 13px; color: #1e3a5f; }
   .inquiry-card { background: #fff; border: 1px solid #e4e7ec; border-radius: 12px; padding: 18px; margin-bottom: 14px; }
   .inquiry-card.unread { border-left: 4px solid #e05252; }
-  .inquiry-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #5b6472; margin-bottom: 8px; }
-  .inquiry-message { white-space: pre-wrap; font-size: 14px; margin: 10px 0; }
-  .inquiry-replies { margin: 10px 0; display: flex; flex-direction: column; gap: 8px; }
-  .inquiry-reply { background: #f0f5ff; border-radius: 8px; padding: 10px 12px; }
-  .inquiry-reply-meta { font-size: 11px; color: #5b6472; margin-bottom: 4px; }
-  .inquiry-reply-message { white-space: pre-wrap; font-size: 13px; }
-  .inquiry-reply-form { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+  .inquiry-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: #5b6472; margin-bottom: 10px; }
+  .inquiry-thread { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
+  .thread-msg { max-width: 88%; border-radius: 12px; padding: 10px 14px; }
+  .thread-msg.from-customer { align-self: flex-start; background: #f8f9fb; border: 1px solid #e4e7ec; border-top-left-radius: 2px; }
+  .thread-msg.from-owner { align-self: flex-end; background: #e8f0fe; border-top-right-radius: 2px; }
+  .thread-msg-head { font-size: 11px; font-weight: 700; color: #5b6472; margin-bottom: 4px; }
+  .thread-msg-body { white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
+  .inquiry-reply-toggle { margin: 10px 0; border: none; padding: 0; }
+  .inquiry-reply-toggle > summary { cursor: pointer; list-style: none; font-size: 13px; font-weight: 700; color: #1e3a5f; padding: 6px 0; }
+  .inquiry-reply-toggle > summary::-webkit-details-marker { display: none; }
+  .inquiry-reply-toggle > summary::after { content: "▶"; font-size: 10px; margin-left: 6px; display: inline-block; }
+  .inquiry-reply-toggle[open] > summary::after { content: "▼"; }
+  .inquiry-reply-form { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
   .inquiry-reply-form textarea { min-height: 60px; }
   .inquiry-reply-form button { align-self: flex-start; }
-  .inquiry-actions { display: flex; gap: 8px; }
+  .inquiry-actions { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid #f0f1f4; margin-top: 4px; }
   .table-wrap { overflow-x: auto; border: 1px solid #e4e7ec; border-radius: 12px; background: #fff; }
   table.data { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
   table.data th, table.data td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e4e7ec; }
@@ -689,28 +695,29 @@ export function inquiriesPage(data: {
             ${inq.budget ? `<span>予算: ${esc(inq.budget)}</span>` : ""}
             ${inq.read ? "" : `<span style="color:#e05252;font-weight:700">未読</span>`}
           </div>
-          <div><strong>${esc(inq.name)}</strong> &lt;${esc(inq.email)}&gt;</div>
-          <div class="inquiry-message">${esc(inq.message)}</div>
-          ${
-            inq.replies && inq.replies.length > 0
-              ? `<div class="inquiry-replies">
-                  ${inq.replies
-                    .map(
-                      (r) => `
-                    <div class="inquiry-reply">
-                      <div class="inquiry-reply-meta">${formatDate(r.sentAt)} に返信済み</div>
-                      <div class="inquiry-reply-message">${esc(r.message)}</div>
-                    </div>
-                  `
-                    )
-                    .join("")}
-                </div>`
-              : ""
-          }
-          <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/reply" class="inquiry-reply-form">
-            <textarea name="message" rows="3" placeholder="返信内容を入力してください" required></textarea>
-            <button class="small" type="submit">返信を送信</button>
-          </form>
+          <div class="inquiry-thread">
+            <div class="thread-msg from-customer">
+              <div class="thread-msg-head">${esc(inq.name)} &lt;${esc(inq.email)}&gt;</div>
+              <div class="thread-msg-body">${esc(inq.message)}</div>
+            </div>
+            ${(inq.replies ?? [])
+              .map(
+                (r) => `
+              <div class="thread-msg from-owner">
+                <div class="thread-msg-head">あなたの返信・${formatDate(r.sentAt)}</div>
+                <div class="thread-msg-body">${esc(r.message)}</div>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+          <details class="inquiry-reply-toggle" ${inq.replies && inq.replies.length > 0 ? "" : "open"}>
+            <summary>返信する</summary>
+            <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/reply" class="inquiry-reply-form">
+              <textarea name="message" rows="3" placeholder="返信内容を入力してください" required></textarea>
+              <button class="small" type="submit">返信を送信</button>
+            </form>
+          </details>
           <div class="inquiry-actions">
             <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/toggle-read">
               <button class="small" type="submit">${inq.read ? "未読にする" : "既読にする"}</button>
