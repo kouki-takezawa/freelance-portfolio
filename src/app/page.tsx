@@ -262,7 +262,7 @@ export default function Home() {
           <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {processSteps.map((item) => (
               <div key={item.step} className="relative">
-                <span className="text-3xl font-bold text-accent/30">
+                <span className="text-3xl font-bold text-accent/60">
                   {item.step}
                 </span>
                 <h3 className="mt-2 text-base font-semibold">{item.title}</h3>
