@@ -1,4 +1,5 @@
 import {
+  DEPARTMENTS,
   ORDER_SERVICE_TYPES,
   ORDER_STATUSES,
   PAYMENT_STATUSES,
@@ -7,6 +8,7 @@ import {
   SPARE_SERVICES_ROWS,
   SPARE_WORKS_ROWS,
   type BlogPost,
+  type Department,
   type Inquiry,
   type Order,
   type ServiceMenu,
@@ -218,6 +220,51 @@ const baseStyle = `
   .login-box h1 { text-align: center; margin-bottom: 24px; }
   .login-box button { width: 100%; margin-top: 20px; }
 
+  /* 組織図(純CSSのorg-treeパターン) */
+  .org-tree, .org-tree ul { list-style: none; margin: 0; padding: 0; position: relative; }
+  .org-tree { text-align: center; padding-top: 8px; }
+  .org-tree, .org-tree ul { display: table; margin: 0 auto; }
+  .org-tree ul { margin-top: 28px; }
+  .org-tree li { display: table-cell; vertical-align: top; padding: 28px 12px 0; position: relative; }
+  .org-tree li::before, .org-tree li::after {
+    content: ""; position: absolute; top: 0; right: 50%;
+    border-top: 2px solid #c7d0dc; width: 50%; height: 28px;
+  }
+  .org-tree li::after { right: auto; left: 50%; border-left: 2px solid #c7d0dc; }
+  .org-tree li:only-child::after, .org-tree li:only-child::before { display: none; }
+  .org-tree li:only-child { padding-top: 0; }
+  .org-tree li:first-child::before, .org-tree li:last-child::after { border: 0 none; }
+  .org-tree li:last-child::before { border-right: 2px solid #c7d0dc; border-radius: 0 6px 0 0; }
+  .org-tree li:first-child::after { border-radius: 6px 0 0 0; }
+  .org-tree ul::before {
+    content: ""; position: absolute; top: 0; left: 50%;
+    border-left: 2px solid #c7d0dc; width: 0; height: 28px;
+  }
+  .org-tree li > .org-box { display: inline-block; text-align: left; }
+  .org-box {
+    background: #fff; border: 1px solid #e4e7ec; border-radius: 12px;
+    padding: 14px 16px; min-width: 170px; box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+  }
+  .org-box.ceo { background: #1e3a5f; border-color: #1e3a5f; color: #fff; min-width: 220px; text-align: center; }
+  .org-box.ceo .org-role { color: rgba(255,255,255,0.75); }
+  .org-box.kanri { background: #eef2f7; border-color: #c7d3e3; text-align: center; min-width: 220px; }
+  .org-box .org-name { font-weight: 700; font-size: 14px; }
+  .org-box .org-role { font-size: 11px; color: #5b6472; margin-top: 2px; }
+  .org-box .org-mission { font-size: 12px; color: #5b6472; margin-top: 8px; line-height: 1.5; }
+  .org-phase-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .org-phase-list li {
+    display: block; table-layout: auto; padding: 0; position: static;
+    font-size: 12px; color: #333c48; background: #f8f9fb; border-radius: 6px;
+    padding: 6px 8px; border-left: 3px solid #c7d0dc;
+  }
+  .org-phase-list li::before, .org-phase-list li::after { content: none; }
+  .org-phase-list li .org-phase-num { color: #8a93a3; font-weight: 700; margin-right: 4px; }
+  .org-phase-list li.approval { border-left-color: #e05252; background: #fdecea; font-weight: 700; }
+  .org-legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 4px 0 20px; font-size: 12px; color: #5b6472; }
+  .org-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .org-legend .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .org-wrap { overflow-x: auto; padding-bottom: 12px; }
+
   @media (max-width: 720px) {
     .app { flex-direction: column; }
     aside {
@@ -296,6 +343,13 @@ const baseStyle = `
     table.data td:not([data-label])::before { content: none; }
     table.data td.hint { display: block; text-align: left; }
     table.data td.actions { justify-content: flex-end; padding-top: 14px; }
+
+    /* 組織図はテーブルレイアウトを崩して縦積みにする */
+    .org-tree, .org-tree ul { display: block; }
+    .org-tree li { display: block; padding: 0 0 0 16px; margin: 14px 0 0; border-left: 2px solid #c7d0dc; }
+    .org-tree li::before, .org-tree li::after, .org-tree ul::before { content: none; }
+    .org-tree > li { border-left: none; padding-left: 0; margin-top: 0; }
+    .org-box, .org-box.kanri, .org-box.ceo { display: block; width: 100%; min-width: 0; }
   }
 `;
 
@@ -340,7 +394,8 @@ type NavKey =
   | "services"
   | "blog"
   | "seo"
-  | "trash";
+  | "trash"
+  | "org";
 
 const NAV_SECTIONS: {
   label: string;
@@ -356,6 +411,10 @@ const NAV_SECTIONS: {
       { key: "analytics", href: "/analytics", label: "アクセス解析" },
       { key: "trash", href: "/trash", label: "ゴミ箱" },
     ],
+  },
+  {
+    label: "AI事業部",
+    items: [{ key: "org", href: "/org", label: "組織図" }],
   },
   {
     label: "サイトコンテンツ",
@@ -486,6 +545,74 @@ export function overviewPage(data: {
     overdueCount: data.overdueCount,
     content,
   });
+}
+
+function deptBox(dept: Department): string {
+  const phases = dept.phases
+    .map(
+      (phase, i) => `
+        <li class="${phase.requiresApproval ? "approval" : ""}">
+          <span class="org-phase-num">${i + 1}.</span>${esc(phase.name)}${
+            phase.requiresApproval ? " (社長承認)" : ""
+          }
+        </li>
+      `
+    )
+    .join("");
+
+  return `
+    <li>
+      <div class="org-box">
+        <div class="org-name">${esc(dept.name)}</div>
+        <div class="org-mission">${esc(dept.mission)}</div>
+        <ul class="org-phase-list">${phases}</ul>
+      </div>
+    </li>
+  `;
+}
+
+export function orgChartPage(data: { unreadCount: number }): string {
+  const depts = DEPARTMENTS.filter((d) => d.code !== "kanri");
+  const kanri = DEPARTMENTS.find((d) => d.code === "kanri")!;
+
+  const content = `
+    <h1>組織図</h1>
+    <h2>AIが各部門を担当し、フェーズの最後は必ず社長の承認を経て実行します</h2>
+    <div class="org-legend">
+      <span><span class="dot" style="background:#f8f9fb;border:1px solid #c7d0dc"></span>AIが自律的に進めるフェーズ</span>
+      <span><span class="dot" style="background:#fdecea"></span>社長の承認が必要なフェーズ</span>
+    </div>
+    <div class="org-wrap">
+      <ul class="org-tree">
+        <li>
+          <div class="org-box ceo">
+            <div class="org-name">社長（あなた）</div>
+            <div class="org-role">最終承認者・全権限</div>
+          </div>
+          <ul>
+            <li>
+              <div class="org-box kanri">
+                <div class="org-name">${esc(kanri.name)}</div>
+                <div class="org-role">${esc(kanri.mission)}</div>
+                <ul class="org-phase-list" style="text-align:left">
+                  ${kanri.phases
+                    .map(
+                      (phase, i) =>
+                        `<li><span class="org-phase-num">${i + 1}.</span>${esc(phase.name)} — ${esc(phase.description)}</li>`
+                    )
+                    .join("")}
+                </ul>
+              </div>
+              <ul>
+                ${depts.map((d) => deptBox(d)).join("")}
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  `;
+  return shell({ title: "組織図", active: "org", unreadCount: data.unreadCount, content });
 }
 
 function workFieldset(index: number, work?: WorkCase): string {
