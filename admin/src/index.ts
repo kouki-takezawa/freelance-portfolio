@@ -19,6 +19,7 @@ import {
   loginPage,
   orderFormPage,
   ordersListPage,
+  orgChartPage,
   overviewPage,
   revenuePage,
   seoPage,
@@ -292,6 +293,11 @@ app.get("/", async (c) => {
       500
     );
   }
+});
+
+app.get("/org", async (c) => {
+  const unreadCount = await getUnreadCount(c.env);
+  return c.html(orgChartPage({ unreadCount }));
 });
 
 app.get("/works", async (c) => {

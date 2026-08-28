@@ -83,6 +83,98 @@ export const SPARE_WORKS_ROWS = 2;
 export const SPARE_SERVICES_ROWS = 1;
 export const SPARE_BLOG_ROWS = 1;
 
+export type DepartmentCode =
+  | "kanri"
+  | "eigyo"
+  | "seisaku"
+  | "marketing"
+  | "cs"
+  | "somu";
+
+export type DepartmentPhase = {
+  name: string;
+  description: string;
+  requiresApproval: boolean;
+};
+
+export type Department = {
+  code: DepartmentCode;
+  name: string;
+  mission: string;
+  phases: DepartmentPhase[];
+};
+
+// AI事業部の組織図。経営管理部が全部門の進捗・承認依頼を集約し、
+// 各事業部の最終フェーズは必ず社長(人間)の承認を経てから実行される。
+export const DEPARTMENTS: Department[] = [
+  {
+    code: "kanri",
+    name: "経営管理部",
+    mission: "全社の進捗・課題を収集し、社長の意思決定を支援する",
+    phases: [
+      { name: "日次モニタリング", description: "各部門の進捗・KPIを収集", requiresApproval: false },
+      { name: "課題・リスク抽出", description: "遅延やトラブルの兆候を検知", requiresApproval: false },
+      { name: "報告の集約", description: "社長への日次レポート・承認依頼をまとめる", requiresApproval: false },
+    ],
+  },
+  {
+    code: "eigyo",
+    name: "営業部",
+    mission: "問い合わせ対応から受注獲得までを担当する",
+    phases: [
+      { name: "問い合わせ検知・一次分類", description: "案件種別・予算・緊急度を分類", requiresApproval: false },
+      { name: "ヒアリング・要件整理", description: "問い合わせ内容から要件を整理", requiresApproval: false },
+      { name: "見積もり・提案書ドラフト作成", description: "料金・納期の提案内容を作成", requiresApproval: false },
+      { name: "返信ドラフト作成", description: "お客様への返信文面を作成", requiresApproval: false },
+      { name: "送信・フォローアップ", description: "社長承認後にお客様へ送信", requiresApproval: true },
+    ],
+  },
+  {
+    code: "seisaku",
+    name: "制作部",
+    mission: "HP・LP・システムの設計から納品までを担当する",
+    phases: [
+      { name: "要件定義", description: "受注内容を仕様に落とし込む", requiresApproval: false },
+      { name: "デザイン", description: "ワイヤーフレーム・UI案を作成", requiresApproval: false },
+      { name: "実装", description: "フロントエンド・バックエンドの実装", requiresApproval: false },
+      { name: "QA・テスト", description: "動作確認・自動テストを実施", requiresApproval: false },
+      { name: "納品・デプロイ", description: "社長承認後に本番反映・納品", requiresApproval: true },
+    ],
+  },
+  {
+    code: "marketing",
+    name: "マーケティング/SEO部",
+    mission: "実績・SEO・発信内容を継続的に改善する",
+    phases: [
+      { name: "実績更新提案", description: "works.jsonの実績差し替えを提案", requiresApproval: false },
+      { name: "SEO改善提案", description: "タイトル・descriptionの改善案を作成", requiresApproval: false },
+      { name: "コンテンツ企画", description: "ブログ・SNS発信の企画を作成", requiresApproval: false },
+      { name: "公開・content更新", description: "社長承認後にcontent/*.jsonへ反映", requiresApproval: true },
+    ],
+  },
+  {
+    code: "cs",
+    name: "カスタマーサクセス・保守部",
+    mission: "納品後の稼働監視・サポート・契約更新を担当する",
+    phases: [
+      { name: "稼働監視", description: "サイトダウン・エラーを検知", requiresApproval: false },
+      { name: "一次対応案作成", description: "修正・更新依頼への対応案を作成", requiresApproval: false },
+      { name: "契約更新提案", description: "更新・アップセルの提案を作成", requiresApproval: false },
+      { name: "対応実施", description: "社長承認後に修正・更新を実施", requiresApproval: true },
+    ],
+  },
+  {
+    code: "somu",
+    name: "総務・経理部",
+    mission: "請求・入金管理などバックオフィス業務を担当する",
+    phases: [
+      { name: "請求書ドラフト作成", description: "受注データから請求書案を作成", requiresApproval: false },
+      { name: "入金確認・催促案作成", description: "未入金の催促文面を作成", requiresApproval: false },
+      { name: "送付・記帳", description: "社長承認後に送付・記帳を実施", requiresApproval: true },
+    ],
+  },
+];
+
 export const SEO_PAGES: { path: string; key: string; label: string }[] = [
   { path: "/", key: "home", label: "トップページ" },
   { path: "/services", key: "services", label: "サービス・料金" },
