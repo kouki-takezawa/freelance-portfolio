@@ -2,8 +2,10 @@
 
 import { useRef } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import type { WorkCase } from "@/lib/works";
 import { categoryVisual } from "@/lib/categoryVisual";
+import WorkBanner from "@/components/illustrations/WorkBanner";
 
 export default function WorksCarousel({ works }: { works: WorkCase[] }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -54,20 +56,34 @@ export default function WorksCarousel({ works }: { works: WorkCase[] }) {
         tabIndex={0}
         className="mt-6 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
       >
-        {works.map((work) => {
+        {works.map((work, i) => {
           const visual = categoryVisual(work.category);
           return (
-            <div
+            <motion.div
               key={work.slug}
               data-card
-              className={`w-[80%] shrink-0 snap-start overflow-hidden rounded-2xl border border-t-4 border-border bg-background sm:w-[calc((100%-3rem)/3)] ${visual.border}`}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.5, delay: (i % 3) * 0.1 }}
+              whileHover={{ y: -6 }}
+              className={`group w-[80%] shrink-0 snap-start overflow-hidden rounded-2xl border border-t-4 border-border bg-background shadow-sm transition-shadow hover:shadow-lg sm:w-[calc((100%-3rem)/3)] ${visual.border}`}
             >
+              <div className={`h-32 overflow-hidden ${visual.bg} text-accent`}>
+                <motion.div
+                  className="h-full w-full"
+                  whileHover={{ scale: 1.08 }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <WorkBanner kind={visual.icon} />
+                </motion.div>
+              </div>
               <div className="p-6">
                 <p className="text-xs font-semibold text-accent">{work.category}</p>
                 <h3 className="mt-2 text-base font-semibold">{work.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted">{work.summary}</p>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
