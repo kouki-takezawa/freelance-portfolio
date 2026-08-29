@@ -19,6 +19,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --font-sans: var(--font-noto-sans-jp);
+  --font-display: var(--font-shippori-mincho);
 }
 
 body {
@@ -50,5 +51,76 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .tap-icon-bounce {
     animation: none;
+  }
+}
+
+.hero-float {
+  animation: hero-float 6s ease-in-out infinite;
+}
+
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.blob-drift {
+  animation: blob-drift 14s ease-in-out infinite;
+}
+
+@keyframes blob-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(20px, -24px) scale(1.08);
+  }
+}
+
+.btn-shimmer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.35) 40%,
+    transparent 60%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+}
+
+.btn-shimmer:hover::before {
+  transform: translateX(120%);
+}
+
+.accordion-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+
+details[open] > .accordion-content {
+  grid-template-rows: 1fr;
+}
+
+.accordion-content > div {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-float,
+  .blob-drift {
+    animation: none;
+  }
+
+  .btn-shimmer::before {
+    display: none;
   }
 }

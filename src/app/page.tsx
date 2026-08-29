@@ -7,6 +7,9 @@ import ServiceIcon from "@/components/illustrations/ServiceIcon";
 import { blogPosts } from "@/lib/blog";
 import WorksCarousel from "@/components/WorksCarousel";
 import TapIcon from "@/components/decor/TapIcon";
+import WaveDivider from "@/components/decor/WaveDivider";
+import Reveal from "@/components/Reveal";
+import { CountUp, AnimatedPrice } from "@/components/CountUp";
 
 const jumpLinks = [
   { href: "#strengths", label: "選ばれる理由" },
@@ -111,12 +114,21 @@ export default function Home() {
   return (
     <div>
       <section className="relative overflow-hidden bg-[radial-gradient(circle,_#e4e7ec_1px,_transparent_1px)] bg-[length:24px_24px]">
-        <div className="mx-auto grid max-w-5xl items-center gap-10 px-6 pt-16 pb-16 sm:pt-24 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-6">
+        <div
+          className="blob-drift pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-accent/20 blur-3xl"
+          aria-hidden="true"
+        />
+        <div
+          className="blob-drift pointer-events-none absolute -right-16 top-1/3 h-80 w-80 rounded-full bg-sky-400/30 blur-3xl"
+          style={{ animationDelay: "-7s" }}
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto grid max-w-5xl items-center gap-10 px-6 pt-16 pb-16 sm:pt-24 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-6">
           <div>
             <p className="text-sm font-semibold tracking-wide text-accent">
               HP制作・LP制作・業務システム/Webアプリ開発・LINE公式アカウント構築
             </p>
-            <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
+            <h1 className="mt-4 font-display text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
               「ホームページが欲しい」を、
               <br className="hidden sm:block" />
               ちょうどいい規模と価格で形にします。
@@ -132,7 +144,7 @@ export default function Home() {
             <div className="mt-8">
               <Link
                 href="/contact"
-                className="inline-block rounded-full bg-accent px-9 py-4 text-base font-bold text-accent-foreground shadow-sm transition-opacity hover:opacity-90"
+                className="btn-shimmer relative inline-block overflow-hidden rounded-full bg-gradient-to-r from-accent to-sky-600 px-9 py-4 text-base font-bold text-accent-foreground shadow-sm transition-transform hover:scale-[1.02]"
               >
                 無料で相談する →
               </Link>
@@ -186,12 +198,13 @@ export default function Home() {
         </div>
       </nav>
 
-      <section id="strengths" className="border-t border-border bg-surface">
-        <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+      <WaveDivider className="bg-background text-surface" />
+      <section id="strengths" className="bg-surface">
+        <Reveal className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <div className="flex items-end justify-between gap-4">
             <div className="flex items-center gap-3">
               <TapIcon kind="spark" />
-              <h2 className="text-xl font-bold sm:text-2xl">選ばれる理由</h2>
+              <h2 className="font-display text-xl font-bold sm:text-2xl">選ばれる理由</h2>
             </div>
             <Link
               href="/about"
@@ -213,64 +226,68 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       </section>
 
-      <section id="services" className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-        <div className="flex items-end justify-between gap-4">
-          <h2 className="text-xl font-bold sm:text-2xl">サービス・料金</h2>
-          <Link
-            href="/services"
-            className="text-sm font-semibold text-accent hover:underline"
-          >
-            すべて見る →
-          </Link>
-        </div>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {services.map((service, i) => {
-            const isCheapest = service.slug === cheapestServiceSlug;
-            return (
-              <div
-                key={service.slug}
-                className={`relative rounded-2xl border p-6 ${
-                  isCheapest ? "border-accent bg-accent/5 shadow-sm" : "border-border"
-                }`}
-              >
-                {isCheapest && (
-                  <span className="absolute -top-3 left-6 rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">
-                    はじめやすい
+      <WaveDivider className="bg-surface text-background" />
+      <section id="services" className="bg-background">
+        <Reveal className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+          <div className="flex items-end justify-between gap-4">
+            <h2 className="font-display text-xl font-bold sm:text-2xl">サービス・料金</h2>
+            <Link
+              href="/services"
+              className="text-sm font-semibold text-accent hover:underline"
+            >
+              すべて見る →
+            </Link>
+          </div>
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {services.map((service, i) => {
+              const isCheapest = service.slug === cheapestServiceSlug;
+              return (
+                <div
+                  key={service.slug}
+                  className={`relative rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
+                    isCheapest ? "border-accent bg-accent/5 shadow-sm" : "border-border"
+                  }`}
+                >
+                  {isCheapest && (
+                    <span className="absolute -top-3 left-6 rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">
+                      はじめやすい
+                    </span>
+                  )}
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">
+                    <ServiceIcon kind={iconKinds[i] ?? "hp"} />
                   </span>
-                )}
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">
-                  <ServiceIcon kind={iconKinds[i] ?? "hp"} />
-                </span>
-                <h3 className="mt-4 text-base font-semibold">{service.name}</h3>
-                <p className="mt-2 text-lg font-bold text-accent">
-                  {service.priceFrom}
-                </p>
-                <p className="mt-3 text-sm leading-relaxed text-muted">
-                  {service.description}
-                </p>
-              </div>
-            );
-          })}
-        </div>
+                  <h3 className="mt-4 text-base font-semibold">{service.name}</h3>
+                  <p className="mt-2 text-lg font-bold text-accent">
+                    <AnimatedPrice priceFrom={service.priceFrom} />
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-muted">
+                    {service.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </Reveal>
       </section>
 
-      <section id="flow" className="border-t border-border bg-surface">
-        <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+      <WaveDivider className="bg-background text-surface" />
+      <section id="flow" className="bg-surface">
+        <Reveal className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
           <div className="flex items-center gap-3">
             <TapIcon kind="route" />
-            <h2 className="text-xl font-bold sm:text-2xl">ご依頼の流れ</h2>
+            <h2 className="font-display text-xl font-bold sm:text-2xl">ご依頼の流れ</h2>
           </div>
           <p className="mt-2 text-sm text-muted">
             お問い合わせからご相談・お見積りまでは無料です。
           </p>
           <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {processSteps.map((item) => (
+            {processSteps.map((item, i) => (
               <div key={item.step} className="relative">
                 <span className="text-3xl font-bold text-accent/60">
-                  {item.step}
+                  <CountUp value={i + 1} pad={2} />
                 </span>
                 <h3 className="mt-2 text-base font-semibold">{item.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
@@ -279,49 +296,55 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </Reveal>
+      </section>
+
+      <WaveDivider className="bg-surface text-background" />
+      <section id="works" className="bg-background">
+        <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+          <WorksCarousel works={works} />
         </div>
       </section>
 
-      <section id="works" className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-        <WorksCarousel works={works} />
-      </section>
-
       {blogPosts.length > 0 && (
-        <section id="blog" className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
-          <div className="flex items-end justify-between gap-4">
-            <h2 className="text-xl font-bold sm:text-2xl">お知らせ</h2>
-            <Link
-              href="/blog"
-              className="text-sm font-semibold text-accent hover:underline"
-            >
-              すべて見る →
-            </Link>
-          </div>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2">
-            {blogPosts.slice(0, 2).map((post) => (
+        <section id="blog" className="bg-background">
+          <Reveal className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="font-display text-xl font-bold sm:text-2xl">お知らせ</h2>
               <Link
-                key={post.slug}
-                href={`/blog/${post.slug}`}
-                className="block rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-accent hover:bg-background"
+                href="/blog"
+                className="text-sm font-semibold text-accent hover:underline"
               >
-                <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-accent">
-                  {post.category}
-                </span>
-                <h3 className="mt-3 text-base font-semibold">{post.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {post.excerpt}
-                </p>
+                すべて見る →
               </Link>
-            ))}
-          </div>
+            </div>
+            <div className="mt-8 grid gap-6 sm:grid-cols-2">
+              {blogPosts.slice(0, 2).map((post) => (
+                <Link
+                  key={post.slug}
+                  href={`/blog/${post.slug}`}
+                  className="block rounded-2xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-background hover:shadow-lg"
+                >
+                  <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-accent">
+                    {post.category}
+                  </span>
+                  <h3 className="mt-3 text-base font-semibold">{post.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">
+                    {post.excerpt}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </Reveal>
         </section>
       )}
 
-      <section id="faq" className="border-t border-border bg-surface">
-        <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+      <WaveDivider className="bg-background text-surface" />
+      <section id="faq" className="bg-surface">
+        <Reveal className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
           <div className="flex items-center gap-3">
             <TapIcon kind="question" />
-            <h2 className="text-xl font-bold sm:text-2xl">よくあるご質問</h2>
+            <h2 className="font-display text-xl font-bold sm:text-2xl">よくあるご質問</h2>
           </div>
           <div className="mt-8 flex flex-col gap-3">
             {faqs.map((item) => (
@@ -337,35 +360,42 @@ export default function Home() {
                     </span>
                   </span>
                 </summary>
-                <p className="mt-3 text-sm leading-relaxed text-muted">
-                  {item.a}
-                </p>
+                <div className="accordion-content">
+                  <div>
+                    <p className="mt-3 text-sm leading-relaxed text-muted">
+                      {item.a}
+                    </p>
+                  </div>
+                </div>
               </details>
             ))}
           </div>
-        </div>
+        </Reveal>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 py-16 sm:py-24 text-center">
-        <div className="flex items-center justify-center gap-3">
-          <TapIcon kind="message" />
-          <h2 className="text-2xl font-bold sm:text-3xl">
-            まずはお気軽にご相談ください
-          </h2>
-        </div>
-        <p className="mt-4 text-sm leading-relaxed text-muted sm:text-base">
-          「何をどこまで頼めるのかわからない」という段階でも問題ありません。
-          <br className="hidden sm:block" />
-          現状のお悩みをお聞かせいただければ、進め方と料金の目安をご提案します。
-        </p>
-        <div className="mt-8">
-          <Link
-            href="/contact"
-            className="inline-block rounded-full bg-accent px-8 py-3 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
-          >
-            お問い合わせフォームへ
-          </Link>
-        </div>
+      <WaveDivider className="bg-surface text-background" />
+      <section className="bg-background">
+        <Reveal className="mx-auto max-w-5xl px-6 py-16 sm:py-24 text-center">
+          <div className="flex items-center justify-center gap-3">
+            <TapIcon kind="message" />
+            <h2 className="font-display text-2xl font-bold sm:text-3xl">
+              まずはお気軽にご相談ください
+            </h2>
+          </div>
+          <p className="mt-4 text-sm leading-relaxed text-muted sm:text-base">
+            「何をどこまで頼めるのかわからない」という段階でも問題ありません。
+            <br className="hidden sm:block" />
+            現状のお悩みをお聞かせいただければ、進め方と料金の目安をご提案します。
+          </p>
+          <div className="mt-8">
+            <Link
+              href="/contact"
+              className="btn-shimmer relative inline-block overflow-hidden rounded-full bg-gradient-to-r from-accent to-sky-600 px-8 py-3 text-sm font-semibold text-accent-foreground transition-transform hover:scale-[1.02]"
+            >
+              お問い合わせフォームへ
+            </Link>
+          </div>
+        </Reveal>
       </section>
     </div>
   );
