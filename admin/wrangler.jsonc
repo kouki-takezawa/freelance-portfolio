@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "freelance-hp-admin",
+  "name": "ai-company-os",
   "main": "src/index.ts",
   "compatibility_date": "2024-09-23",
   "kv_namespaces": [
@@ -8,5 +8,18 @@
       "binding": "DATA",
       "id": "e37dfd650b9a4271b2bdb5b33e364b56"
     }
-  ]
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "LIVE", "class_name": "LiveRoom" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["LiveRoom"] }
+  ],
+  "triggers": {
+    // 毎週日曜21:00 UTC(月曜6:00 JST)にマーケティング/SEO部・SNS部が新しい
+    // ブログ記事案・SNS投稿案を自動生成する(ANTHROPIC_API_KEY未設定時は何もしない)
+    "crons": ["0 21 * * SUN"]
+  }
 }

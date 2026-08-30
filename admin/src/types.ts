@@ -16,6 +16,19 @@ export type ServiceMenu = {
   scope: string[];
 };
 
+export const SNS_PLATFORMS = ["note", "Threads", "Instagram"] as const;
+export type SnsPlatform = (typeof SNS_PLATFORMS)[number];
+
+export type SnsPost = {
+  key: string;
+  id: string;
+  platform: SnsPlatform;
+  caption: string;
+  body: string;
+  status: "draft" | "posted";
+  createdAt: number;
+};
+
 export type SeoEntry = {
   title: string;
   description: string;
@@ -88,6 +101,7 @@ export type DepartmentCode =
   | "eigyo"
   | "seisaku"
   | "marketing"
+  | "sns"
   | "cs"
   | "somu";
 
@@ -95,6 +109,8 @@ export type DepartmentPhase = {
   name: string;
   description: string;
   requiresApproval: boolean;
+  /** 担当するAI社員の役職名(例: PM AI, デザイナーAI) */
+  role: string;
 };
 
 export type Department = {
@@ -112,9 +128,9 @@ export const DEPARTMENTS: Department[] = [
     name: "経営管理部",
     mission: "全社の進捗・課題を収集し、社長の意思決定を支援する",
     phases: [
-      { name: "日次モニタリング", description: "各部門の進捗・KPIを収集", requiresApproval: false },
-      { name: "課題・リスク抽出", description: "遅延やトラブルの兆候を検知", requiresApproval: false },
-      { name: "報告の集約", description: "社長への日次レポート・承認依頼をまとめる", requiresApproval: false },
+      { name: "日次モニタリング", description: "各部門の進捗・KPIを収集", requiresApproval: false, role: "PM AI" },
+      { name: "課題・リスク抽出", description: "遅延やトラブルの兆候を検知", requiresApproval: false, role: "PM AI" },
+      { name: "報告の集約", description: "社長への日次レポート・承認依頼をまとめる", requiresApproval: false, role: "PM AI" },
     ],
   },
   {
@@ -122,11 +138,11 @@ export const DEPARTMENTS: Department[] = [
     name: "営業部",
     mission: "問い合わせ対応から受注獲得までを担当する",
     phases: [
-      { name: "問い合わせ検知・一次分類", description: "案件種別・予算・緊急度を分類", requiresApproval: false },
-      { name: "ヒアリング・要件整理", description: "問い合わせ内容から要件を整理", requiresApproval: false },
-      { name: "見積もり・提案書ドラフト作成", description: "料金・納期の提案内容を作成", requiresApproval: false },
-      { name: "返信ドラフト作成", description: "お客様への返信文面を作成", requiresApproval: false },
-      { name: "送信・フォローアップ", description: "社長承認後にお客様へ送信", requiresApproval: true },
+      { name: "問い合わせ検知・一次分類", description: "案件種別・予算・緊急度を分類", requiresApproval: false, role: "営業AI" },
+      { name: "ヒアリング・要件整理", description: "問い合わせ内容から要件を整理", requiresApproval: false, role: "営業AI" },
+      { name: "見積もり・提案書ドラフト作成", description: "料金・納期の提案内容を作成", requiresApproval: false, role: "営業AI" },
+      { name: "返信ドラフト作成", description: "お客様への返信文面を作成", requiresApproval: false, role: "営業AI" },
+      { name: "送信・フォローアップ", description: "社長承認後にお客様へ送信", requiresApproval: true, role: "営業AI" },
     ],
   },
   {
@@ -134,22 +150,32 @@ export const DEPARTMENTS: Department[] = [
     name: "制作部",
     mission: "HP・LP・システムの設計から納品までを担当する",
     phases: [
-      { name: "要件定義", description: "受注内容を仕様に落とし込む", requiresApproval: false },
-      { name: "デザイン", description: "ワイヤーフレーム・UI案を作成", requiresApproval: false },
-      { name: "実装", description: "フロントエンド・バックエンドの実装", requiresApproval: false },
-      { name: "QA・テスト", description: "動作確認・自動テストを実施", requiresApproval: false },
-      { name: "納品・デプロイ", description: "社長承認後に本番反映・納品", requiresApproval: true },
+      { name: "要件定義", description: "受注内容を仕様に落とし込む", requiresApproval: false, role: "ディレクターAI" },
+      { name: "デザイン", description: "ワイヤーフレーム・UI案を作成", requiresApproval: false, role: "デザイナーAI" },
+      { name: "実装", description: "フロントエンド・バックエンドの実装", requiresApproval: false, role: "エンジニアAI" },
+      { name: "QA・テスト", description: "動作確認・自動テストを実施", requiresApproval: false, role: "QA AI" },
+      { name: "納品・デプロイ", description: "社長承認後に本番反映・納品", requiresApproval: true, role: "エンジニアAI" },
     ],
   },
   {
     code: "marketing",
     name: "マーケティング/SEO部",
-    mission: "実績・SEO・発信内容を継続的に改善する",
+    mission: "実績・SEO・お知らせを継続的に改善する",
     phases: [
-      { name: "実績更新提案", description: "works.jsonの実績差し替えを提案", requiresApproval: false },
-      { name: "SEO改善提案", description: "タイトル・descriptionの改善案を作成", requiresApproval: false },
-      { name: "コンテンツ企画", description: "ブログ・SNS発信の企画を作成", requiresApproval: false },
-      { name: "公開・content更新", description: "社長承認後にcontent/*.jsonへ反映", requiresApproval: true },
+      { name: "実績更新提案", description: "works.jsonの実績差し替えを提案", requiresApproval: false, role: "マーケターAI" },
+      { name: "SEO改善提案", description: "タイトル・descriptionの改善案を作成", requiresApproval: false, role: "SEO AI" },
+      { name: "お知らせ企画", description: "blog.jsonのお知らせ記事を企画", requiresApproval: false, role: "ライターAI" },
+      { name: "公開・content更新", description: "社長承認後にcontent/*.jsonへ反映", requiresApproval: true, role: "マーケターAI" },
+    ],
+  },
+  {
+    code: "sns",
+    name: "SNS部",
+    mission: "note・Threads・Instagramでの発信を担当する",
+    phases: [
+      { name: "ネタ・トレンド収集", description: "各媒体の反応や話題を収集", requiresApproval: false, role: "SNS運用AI" },
+      { name: "投稿文・画像案作成", description: "媒体ごとに投稿文・画像案をドラフト", requiresApproval: false, role: "クリエイティブAI" },
+      { name: "投稿", description: "社長承認後に投稿を実行", requiresApproval: true, role: "SNS運用AI" },
     ],
   },
   {
@@ -157,10 +183,10 @@ export const DEPARTMENTS: Department[] = [
     name: "カスタマーサクセス・保守部",
     mission: "納品後の稼働監視・サポート・契約更新を担当する",
     phases: [
-      { name: "稼働監視", description: "サイトダウン・エラーを検知", requiresApproval: false },
-      { name: "一次対応案作成", description: "修正・更新依頼への対応案を作成", requiresApproval: false },
-      { name: "契約更新提案", description: "更新・アップセルの提案を作成", requiresApproval: false },
-      { name: "対応実施", description: "社長承認後に修正・更新を実施", requiresApproval: true },
+      { name: "稼働監視", description: "サイトダウン・エラーを検知", requiresApproval: false, role: "保守AI" },
+      { name: "一次対応案作成", description: "修正・更新依頼への対応案を作成", requiresApproval: false, role: "サポートAI" },
+      { name: "契約更新提案", description: "更新・アップセルの提案を作成", requiresApproval: false, role: "カスタマーサクセスAI" },
+      { name: "対応実施", description: "社長承認後に修正・更新を実施", requiresApproval: true, role: "保守AI" },
     ],
   },
   {
@@ -168,12 +194,28 @@ export const DEPARTMENTS: Department[] = [
     name: "総務・経理部",
     mission: "請求・入金管理などバックオフィス業務を担当する",
     phases: [
-      { name: "請求書ドラフト作成", description: "受注データから請求書案を作成", requiresApproval: false },
-      { name: "入金確認・催促案作成", description: "未入金の催促文面を作成", requiresApproval: false },
-      { name: "送付・記帳", description: "社長承認後に送付・記帳を実施", requiresApproval: true },
+      { name: "請求書ドラフト作成", description: "受注データから請求書案を作成", requiresApproval: false, role: "経理AI" },
+      { name: "入金確認・催促案作成", description: "未入金の催促文面を作成", requiresApproval: false, role: "経理AI" },
+      { name: "送付・記帳", description: "社長承認後に送付・記帳を実施", requiresApproval: true, role: "経理AI" },
     ],
   },
 ];
+
+export type SidebarCounts = {
+  unreadCount: number;
+  overdueCount: number;
+  snsDraftCount: number;
+  unpaidCount: number;
+  pendingTotal: number;
+};
+
+export type ActivityEntry = {
+  key: string;
+  at: number;
+  actor: string;
+  action: string;
+  detail: string;
+};
 
 export const SEO_PAGES: { path: string; key: string; label: string }[] = [
   { path: "/", key: "home", label: "トップページ" },

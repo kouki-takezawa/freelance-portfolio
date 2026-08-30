@@ -1,3 +1,69 @@
+const ADMIN_ACCOUNT_KEY = "auth:admin";
+const PBKDF2_ITERATIONS = 100000;
+
+export type AdminAccount = { email: string; passwordHash: string };
+
+export async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    keyMaterial,
+    256
+  );
+  return `${PBKDF2_ITERATIONS}:${toHex(salt)}:${toHex(new Uint8Array(bits))}`;
+}
+
+export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  const [iterStr, saltHex, hashHex] = stored.split(":");
+  const iterations = Number(iterStr);
+  if (!iterations || !saltHex || !hashHex) return false;
+  const salt = Uint8Array.from(saltHex.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
+    keyMaterial,
+    256
+  );
+  return timingSafeEqual(toHex(new Uint8Array(bits)), hashHex);
+}
+
+// ログイン情報はKVに保存する(auth:admin)。初回アクセス時のみ、Workers Secretsの
+// ADMIN_EMAIL/ADMIN_PASSWORDから移行する(設定画面からの変更はKV側のみを更新する)。
+export async function getAdminAccount(env: {
+  DATA: KVNamespace;
+  ADMIN_EMAIL: string;
+  ADMIN_PASSWORD: string;
+}): Promise<AdminAccount> {
+  const raw = await env.DATA.get(ADMIN_ACCOUNT_KEY);
+  if (raw) return JSON.parse(raw) as AdminAccount;
+  const seeded: AdminAccount = {
+    email: env.ADMIN_EMAIL,
+    passwordHash: await hashPassword(env.ADMIN_PASSWORD),
+  };
+  await env.DATA.put(ADMIN_ACCOUNT_KEY, JSON.stringify(seeded));
+  return seeded;
+}
+
+export async function setAdminAccount(
+  env: { DATA: KVNamespace },
+  account: AdminAccount
+): Promise<void> {
+  await env.DATA.put(ADMIN_ACCOUNT_KEY, JSON.stringify(account));
+}
+
 export function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let result = 0;

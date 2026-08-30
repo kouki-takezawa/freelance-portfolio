@@ -24,7 +24,7 @@ jobs:
           cache: npm
           cache-dependency-path: admin/package-lock.json
 
-      - run: npm install
+      - run: npm ci
 
       - uses: cloudflare/wrangler-action@v3
         with:

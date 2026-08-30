@@ -93,8 +93,11 @@ export type RevenueSummary = {
   thisMonthRevenue: number;
   yearToDateRevenue: number;
   unpaidTotal: number;
+  unpaidCount: number;
   pipelineTotal: number;
+  quotingCount: number;
   inProgressCount: number;
+  deliveredCount: number;
   overdueCount: number;
   monthly: { month: string; total: number; count: number }[];
 };
@@ -123,15 +126,17 @@ export function computeRevenue(orders: Order[]): RevenueSummary {
     .filter((m) => m.month.startsWith(thisYear))
     .reduce((sum, m) => sum + m.total, 0);
 
-  const unpaidTotal = orders
-    .filter((o) => o.paymentStatus === "未入金" && o.status !== "キャンセル")
-    .reduce((sum, o) => sum + o.amount, 0);
+  const unpaidOrders = orders.filter((o) => o.paymentStatus === "未入金" && o.status !== "キャンセル");
+  const unpaidTotal = unpaidOrders.reduce((sum, o) => sum + o.amount, 0);
+  const unpaidCount = unpaidOrders.length;
 
   const pipelineTotal = orders
     .filter((o) => o.status === "見積もり中" || o.status === "進行中")
     .reduce((sum, o) => sum + o.amount, 0);
 
+  const quotingCount = orders.filter((o) => o.status === "見積もり中").length;
   const inProgressCount = orders.filter((o) => o.status === "進行中").length;
+  const deliveredCount = orders.filter((o) => o.status === "納品済み").length;
 
   const overdueCount = orders.filter(
     (o) => o.status !== "納品済み" && o.status !== "キャンセル" && o.dueDate && o.dueDate < today
@@ -141,8 +146,11 @@ export function computeRevenue(orders: Order[]): RevenueSummary {
     thisMonthRevenue,
     yearToDateRevenue,
     unpaidTotal,
+    unpaidCount,
     pipelineTotal,
+    quotingCount,
     inProgressCount,
+    deliveredCount,
     overdueCount,
     monthly,
   };

@@ -1,0 +1,6 @@
+ADMIN_EMAIL=you@example.com
+ADMIN_PASSWORD=change-me
+SESSION_SECRET=random-long-string
+CONTENT_GITHUB_TOKEN=github-token-with-repo-write-on-freelance-hp
+CF_ANALYTICS_TOKEN=cloudflare-api-token-with-account-analytics-read
+RESEND_API_KEY=re_xxx
