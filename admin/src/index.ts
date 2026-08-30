@@ -137,7 +137,7 @@ async function sendSecurityAlertEmail(env: Bindings, subject: string, text: stri
 
 const COOKIE_NAME = "admin_session";
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Bindings; Variables: { nonce: string } }>();
 
 // GitHub Contents APIやCloudflare Analytics APIへの外部呼び出しは、ホーム画面の表示
 // のたびに毎回発生すると応答が遅くなる(かつ失敗しうる)ため、KVに短時間キャッシュする。
@@ -270,41 +270,55 @@ async function parseBulkKeys(c: { req: { json: () => Promise<unknown> } }): Prom
   }
 }
 
-const SECURITY_HEADERS: Record<string, string> = {
+function generateNonce(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return btoa(String.fromCharCode(...bytes));
+}
+
+const STATIC_SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
-  "Content-Security-Policy": [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "img-src 'self' data:",
-    "font-src 'self' data: https://fonts.gstatic.com",
-    "connect-src 'self'",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "frame-ancestors 'none'",
-  ].join("; "),
 };
 
 app.use("*", async (c, next) => {
+  // ページ描画で使うnonceをリクエストごとに生成し、CSPのscript-srcと
+  // 実際に埋め込む<script nonce="...">を一致させる('unsafe-inline'を使わないため)
+  const nonce = generateNonce();
+  c.set("nonce", nonce);
   await next();
   // WebSocketアップグレード応答(101)はヘッダーが不変のため、セキュリティヘッダーの付与をスキップする
   if (c.res.status === 101) return;
-  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+  for (const [key, value] of Object.entries(STATIC_SECURITY_HEADERS)) {
     c.header(key, value);
   }
+  c.header(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      `script-src 'self' 'nonce-${nonce}'`,
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data:",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "connect-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join("; ")
+  );
 });
 
-// SameSite=Laxのcookieでは防ぎきれない場合に備えたCSRF対策の保険
+// SameSite=Laxのcookieでは防ぎきれない場合に備えたCSRF対策の保険。
+// ブラウザは同一オリジンへのPOSTでも(フォーム送信を含め)Originヘッダーを付与するため、
+// 状態変更系メソッドでOriginが無い/一致しないリクエストは一律拒否する。
 app.use("*", async (c, next) => {
   const method = c.req.method;
   if (method !== "GET" && method !== "HEAD") {
     const origin = c.req.header("Origin");
-    if (origin && origin !== new URL(c.req.url).origin) {
+    if (!origin || origin !== new URL(c.req.url).origin) {
       return c.text("Forbidden", 403);
     }
   }
@@ -314,7 +328,7 @@ app.use("*", async (c, next) => {
 const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 60 * 15;
 const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 8;
 
-app.get("/login", (c) => c.html(loginPage()));
+app.get("/login", (c) => c.html(loginPage(undefined, c.get("nonce"))));
 
 app.post("/login", async (c) => {
   const ip = c.req.header("CF-Connecting-IP") ?? "unknown";
@@ -323,7 +337,7 @@ app.post("/login", async (c) => {
   const attempts = Number((await c.env.DATA.get(rateLimitKey)) ?? "0");
   if (attempts >= LOGIN_RATE_LIMIT_MAX_ATTEMPTS) {
     return c.html(
-      loginPage("ログイン試行回数が多すぎます。しばらくしてから再度お試しください。"),
+      loginPage("ログイン試行回数が多すぎます。しばらくしてから再度お試しください。", c.get("nonce")),
       429
     );
   }
@@ -354,12 +368,12 @@ app.post("/login", async (c) => {
         )
       );
     }
-    return c.html(loginPage("メールアドレスまたはパスワードが違います"), 401);
+    return c.html(loginPage("メールアドレスまたはパスワードが違います", c.get("nonce")), 401);
   }
 
   await c.env.DATA.delete(rateLimitKey);
 
-  const cookieValue = await createSessionCookie(account.email, c.env.SESSION_SECRET);
+  const cookieValue = await createSessionCookie(account.email, c.env.SESSION_SECRET, account.sessionEpoch ?? 0);
   setCookie(c, COOKIE_NAME, cookieValue, {
     httpOnly: true,
     secure: true,
@@ -378,8 +392,14 @@ app.post("/logout", (c) => {
 // 認証ゲート: 2026-08-30に再有効化。
 app.use("/*", async (c, next) => {
   const cookieValue = getCookie(c, COOKIE_NAME);
-  const email = await verifySessionCookie(cookieValue, c.env.SESSION_SECRET);
-  if (!email) {
+  const session = await verifySessionCookie(cookieValue, c.env.SESSION_SECRET);
+  if (!session) {
+    return c.redirect("/login");
+  }
+  // パスワード/ログインID変更後に発行された古いCookieを無効化するため、
+  // Cookie内のepochと現在のアカウントepochが一致するか確認する
+  const account = await getAdminAccount(c.env);
+  if (session.epoch !== (account.sessionEpoch ?? 0)) {
     return c.redirect("/login");
   }
   await next();
@@ -426,6 +446,7 @@ app.get("/", async (c) => {
         snsPostedCount: snsPosts.filter((p) => p.status === "posted").length,
         todayPageviews,
         pendingTotal: unreadCount + revenue.overdueCount + snsDraftCount + revenue.unpaidCount,
+        nonce: c.get("nonce"),
       })
     );
   } catch (err) {
@@ -448,6 +469,7 @@ app.get("/", async (c) => {
         todayPageviews: 0,
         pendingTotal: 0,
         message: { type: "error", text: (err as Error).message },
+        nonce: c.get("nonce"),
       }),
       500
     );
@@ -466,6 +488,7 @@ app.get("/sns", async (c) => {
       posts: snsPosts,
       ...counts,
       message: error ? { type: "error", text: `データの取得に失敗しました: ${error}` } : undefined,
+      nonce: c.get("nonce"),
     })
   );
 });
@@ -529,6 +552,7 @@ app.get("/orders", async (c) => {
       currentFilter: { q, sort, dir },
       selectedOrder,
       message: error ? { type: "error", text: `データの取得に失敗しました: ${error}` } : undefined,
+      nonce: c.get("nonce"),
     })
   );
 });
@@ -551,7 +575,7 @@ app.get("/orders/new", async (c) => {
   const fromInquiry = c.req.query("fromInquiry");
   const prefill = fromInquiry ? await buildOrderPrefillFromInquiry(c.env, fromInquiry) : undefined;
 
-  return c.html(orderFormPage({ prefill, ...counts }));
+  return c.html(orderFormPage({ prefill, ...counts, nonce: c.get("nonce") }));
 });
 
 async function buildOrderPrefillFromInquiry(
@@ -594,7 +618,7 @@ app.get("/orders/:key/edit", async (c) => {
   const key = decodeURIComponent(c.req.param("key"));
   const [order, counts] = await Promise.all([getOrder(c.env, key), getSidebarCounts(c.env)]);
   if (!order) return c.redirect("/orders");
-  return c.html(orderFormPage({ order, ...counts }));
+  return c.html(orderFormPage({ order, ...counts, nonce: c.get("nonce") }));
 });
 
 // "/orders/:key" は1セグメントの汎用パターンなので、"/orders/bulk-delete" と衝突しないよう
@@ -686,6 +710,7 @@ app.get("/revenue", async (c) => {
       pipelineTotal: revenue.pipelineTotal,
       monthly: revenue.monthly,
       message: error ? { type: "error", text: `データの取得に失敗しました: ${error}` } : undefined,
+      nonce: c.get("nonce"),
     })
   );
 });
@@ -695,7 +720,7 @@ app.get("/analytics", async (c) => {
     getAnalyticsSummary(c.env.CF_ANALYTICS_TOKEN),
     getSidebarCounts(c.env),
   ]);
-  return c.html(analyticsPage({ summary, ...counts }));
+  return c.html(analyticsPage({ summary, ...counts, nonce: c.get("nonce") }));
 });
 
 app.get("/inquiries", async (c) => {
@@ -734,6 +759,7 @@ app.get("/inquiries", async (c) => {
       ...counts,
       currentFilter: { unreadOnly, type, q },
       message: error ? { type: "error", text: `データの取得に失敗しました: ${error}` } : undefined,
+      nonce: c.get("nonce"),
     })
   );
 });
@@ -806,6 +832,7 @@ app.get("/trash", async (c) => {
       items,
       ...counts,
       message: error ? { type: "error", text: `データの取得に失敗しました: ${error}` } : undefined,
+      nonce: c.get("nonce"),
     })
   );
 });
@@ -847,7 +874,9 @@ app.post("/inquiries/:key/reply", async (c) => {
 
   const raw = await c.env.DATA.get(key);
   if (!raw || !message) {
-    return c.html(inquiriesPage({ inquiries, allTypes, ...countsFor(inquiries), currentFilter }));
+    return c.html(
+      inquiriesPage({ inquiries, allTypes, ...countsFor(inquiries), currentFilter, nonce: c.get("nonce") })
+    );
   }
 
   const inquiry = { ...(JSON.parse(raw) as Inquiry), key };
@@ -861,6 +890,7 @@ app.post("/inquiries/:key/reply", async (c) => {
         ...countsFor(inquiries),
         currentFilter,
         message: { type: "error", text: `返信の送信に失敗しました: ${result.error}` },
+        nonce: c.get("nonce"),
       }),
       500
     );
@@ -883,6 +913,7 @@ app.post("/inquiries/:key/reply", async (c) => {
       ...countsFor(refreshed),
       currentFilter,
       message: { type: "ok", text: "返信を送信しました。" },
+      nonce: c.get("nonce"),
     })
   );
 });
@@ -999,6 +1030,7 @@ app.get("/approvals", async (c) => {
         ),
         snsDrafts: snsPosts.filter((p) => p.status === "draft"),
         unpaidOrders: orders.filter((o) => o.paymentStatus === "未入金" && o.status !== "キャンセル"),
+        nonce: c.get("nonce"),
       })
     );
   } catch (err) {
@@ -1010,6 +1042,7 @@ app.get("/approvals", async (c) => {
         snsDrafts: [],
         unpaidOrders: [],
         message: { type: "error", text: `データの取得に失敗しました: ${(err as Error).message}` },
+        nonce: c.get("nonce"),
       }),
       500
     );
@@ -1028,6 +1061,7 @@ app.get("/activity", async (c) => {
       entries,
       ...counts,
       message: error ? { type: "error", text: `データの取得に失敗しました: ${error}` } : undefined,
+      nonce: c.get("nonce"),
     })
   );
 });
@@ -1119,7 +1153,7 @@ app.get("/sw.js", (c) => {
 
 app.get("/settings", async (c) => {
   const [account, counts] = await Promise.all([getAdminAccount(c.env), getSidebarCounts(c.env)]);
-  return c.html(settingsPage({ email: account.email, ...counts }));
+  return c.html(settingsPage({ email: account.email, ...counts, nonce: c.get("nonce") }));
 });
 
 app.post("/settings/account", async (c) => {
@@ -1135,6 +1169,7 @@ app.post("/settings/account", async (c) => {
         email: account.email,
         ...counts,
         message: { type: "error", text: "正しいメールアドレスを入力してください。" },
+        nonce: c.get("nonce"),
       })
     );
   }
@@ -1144,18 +1179,29 @@ app.post("/settings/account", async (c) => {
         email: account.email,
         ...counts,
         message: { type: "error", text: "現在のパスワードが違います。" },
+        nonce: c.get("nonce"),
       }),
       401
     );
   }
 
-  await setAdminAccount(c.env, { ...account, email: newEmail });
+  const accountNextEpoch = (account.sessionEpoch ?? 0) + 1;
+  await setAdminAccount(c.env, { ...account, email: newEmail, sessionEpoch: accountNextEpoch });
+  const accountCookieValue = await createSessionCookie(newEmail, c.env.SESSION_SECRET, accountNextEpoch);
+  setCookie(c, COOKIE_NAME, accountCookieValue, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
   c.executionCtx.waitUntil(logActivity(c.env, "社長", "ログインIDを変更", newEmail));
   return c.html(
     settingsPage({
       email: newEmail,
       ...counts,
       message: { type: "ok", text: "ログインIDを更新しました。" },
+      nonce: c.get("nonce"),
     })
   );
 });
@@ -1174,6 +1220,7 @@ app.post("/settings/password", async (c) => {
         email: account.email,
         ...counts,
         message: { type: "error", text: "現在のパスワードが違います。" },
+        nonce: c.get("nonce"),
       }),
       401
     );
@@ -1184,6 +1231,7 @@ app.post("/settings/password", async (c) => {
         email: account.email,
         ...counts,
         message: { type: "error", text: "新しいパスワードは8文字以上にしてください。" },
+        nonce: c.get("nonce"),
       })
     );
   }
@@ -1193,17 +1241,32 @@ app.post("/settings/password", async (c) => {
         email: account.email,
         ...counts,
         message: { type: "error", text: "新しいパスワード(確認)が一致しません。" },
+        nonce: c.get("nonce"),
       })
     );
   }
 
-  await setAdminAccount(c.env, { ...account, passwordHash: await hashPassword(newPassword) });
+  const passwordNextEpoch = (account.sessionEpoch ?? 0) + 1;
+  await setAdminAccount(c.env, {
+    ...account,
+    passwordHash: await hashPassword(newPassword),
+    sessionEpoch: passwordNextEpoch,
+  });
+  const passwordCookieValue = await createSessionCookie(account.email, c.env.SESSION_SECRET, passwordNextEpoch);
+  setCookie(c, COOKIE_NAME, passwordCookieValue, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
   c.executionCtx.waitUntil(logActivity(c.env, "社長", "パスワードを変更", "-"));
   return c.html(
     settingsPage({
       email: account.email,
       ...counts,
       message: { type: "ok", text: "パスワードを変更しました。次回ログインから新しいパスワードが必要です。" },
+      nonce: c.get("nonce"),
     })
   );
 });
@@ -1231,13 +1294,14 @@ app.get("/clients", async (c) => {
       entry.lastActivity = Math.max(entry.lastActivity, i.receivedAt);
       map.set(i.name, entry);
     }
-    return c.html(clientsListPage({ ...counts, clients: [...map.values()] }));
+    return c.html(clientsListPage({ ...counts, clients: [...map.values()], nonce: c.get("nonce") }));
   } catch (err) {
     return c.html(
       clientsListPage({
         ...ZERO_COUNTS,
         clients: [],
         message: { type: "error", text: `データの取得に失敗しました: ${(err as Error).message}` },
+        nonce: c.get("nonce"),
       }),
       500
     );
@@ -1254,6 +1318,7 @@ app.get("/clients/:name", async (c) => {
         name,
         orders: orders.filter((o) => o.clientName === name),
         inquiries: inquiries.filter((i) => i.name === name),
+        nonce: c.get("nonce"),
       })
     );
   } catch (err) {
@@ -1264,6 +1329,7 @@ app.get("/clients/:name", async (c) => {
         orders: [],
         inquiries: [],
         message: { type: "error", text: `データの取得に失敗しました: ${(err as Error).message}` },
+        nonce: c.get("nonce"),
       }),
       500
     );
@@ -1276,7 +1342,14 @@ app.get("/search", async (c) => {
   const q = (c.req.query("q") ?? "").trim();
   const counts = await getSidebarCounts(c.env);
   if (!q) {
-    return c.html(searchPage({ ...counts, q, results: { orders: [], inquiries: [], snsPosts: [], activity: [] } }));
+    return c.html(
+      searchPage({
+        ...counts,
+        q,
+        results: { orders: [], inquiries: [], snsPosts: [], activity: [] },
+        nonce: c.get("nonce"),
+      })
+    );
   }
 
   const qLower = q.toLowerCase();
@@ -1298,6 +1371,7 @@ app.get("/search", async (c) => {
         snsPosts: snsPosts.filter((p) => has([p.caption, p.body])).slice(0, 20),
         activity: activity.filter((e) => has([e.actor, e.action, e.detail])).slice(0, 20),
       },
+      nonce: c.get("nonce"),
     })
   );
 });
@@ -1321,6 +1395,7 @@ app.get("/reports/monthly", async (c) => {
         snsDraftCount: counts.snsDraftCount,
         snsPostedCount: snsPosts.filter((p) => p.status === "posted").length,
         monthly: revenue.monthly,
+        nonce: c.get("nonce"),
       })
     );
   } catch (err) {
@@ -1338,6 +1413,7 @@ app.get("/reports/monthly", async (c) => {
         snsPostedCount: 0,
         monthly: [],
         message: { type: "error", text: `データの取得に失敗しました: ${(err as Error).message}` },
+        nonce: c.get("nonce"),
       }),
       500
     );

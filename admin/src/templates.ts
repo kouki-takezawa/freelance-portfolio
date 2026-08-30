@@ -15,7 +15,7 @@ import type { TrashItem } from "./trash";
 import { esc, formatYen, PUBLIC_SITE_URL } from "./util";
 import { banner, htmlShell, shell } from "./shell";
 
-export function loginPage(errorMessage?: string): string {
+export function loginPage(errorMessage: string | undefined, nonce: string): string {
   const body = `
     <div class="login-box">
       <h1>AI事業部 ログイン</h1>
@@ -29,7 +29,7 @@ export function loginPage(errorMessage?: string): string {
       </form>
     </div>
   `;
-  return htmlShell("ログイン", body);
+  return htmlShell("ログイン", body, nonce);
 }
 
 type DeptStat = { count: number; href: string; detail?: string };
@@ -157,9 +157,10 @@ function bulkBar(actions: { id: string; label: string; danger?: boolean }[], sel
 function bulkActionsScript(opts: {
   selectAllId: string;
   actions: { id: string; endpoint: string; confirmText?: string }[];
+  nonce: string;
 }): string {
   return `
-  <script>
+  <script nonce="${opts.nonce}">
     (function () {
       var checks = Array.prototype.slice.call(document.querySelectorAll(".row-check"));
       var selectAll = document.getElementById(${JSON.stringify(opts.selectAllId)});
@@ -228,6 +229,7 @@ export function orgChartPage(data: {
   todayPageviews: number;
   pendingTotal: number;
   message?: { type: "ok" | "error"; text: string };
+  nonce: string;
 }): string {
   const depts = DEPARTMENTS.filter((d) => d.code !== "kanri");
   const kanri = DEPARTMENTS.find((d) => d.code === "kanri")!;
@@ -322,7 +324,7 @@ export function orgChartPage(data: {
       </div>
     </div>
     </div>
-    <script>
+    <script nonce="${data.nonce}">
       (function () {
         // ドラッグ&ドロップで部門カードの並び順を変更し、ブラウザに保存する(見る人ごとの好みなのでKVには保存しない)
         var branches = document.getElementById("orgBranches");
@@ -477,6 +479,7 @@ export function orgChartPage(data: {
     pendingTotal: data.pendingTotal,
     wide: "full",
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -496,6 +499,7 @@ export function inquiriesPage(data: {
   pendingTotal?: number;
   currentFilter: { unreadOnly: boolean; type: string; q?: string };
   message?: { type: "ok" | "error"; text: string };
+  nonce: string;
 }): string {
   const { unreadOnly, type } = data.currentFilter;
   const q = data.currentFilter.q ?? "";
@@ -563,7 +567,7 @@ export function inquiriesPage(data: {
             <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/toggle-read">
               <button class="small" type="submit">${inq.read ? "未読にする" : "既読にする"}</button>
             </form>
-            <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/delete" onsubmit="return confirm('この問い合わせを削除しますか？');">
+            <form method="post" action="/inquiries/${encodeURIComponent(inq.key)}/delete" data-confirm="この問い合わせを削除しますか？">
               <button class="small" type="submit" style="color:var(--danger);border-color:var(--danger)">削除</button>
             </form>
           </div>
@@ -587,6 +591,7 @@ export function inquiriesPage(data: {
               { id: "bulkReadBtn", endpoint: "/inquiries/bulk-read" },
               { id: "bulkDeleteBtn", endpoint: "/inquiries/bulk-delete", confirmText: "件のお問い合わせを削除します。よろしいですか？" },
             ],
+            nonce: data.nonce,
           })
         : ""
     }
@@ -598,6 +603,7 @@ export function inquiriesPage(data: {
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -620,6 +626,7 @@ export function snsPage(data: {
   overdueCount: number;
   pendingTotal?: number;
   message?: { type: "ok" | "error"; text: string };
+  nonce: string;
 }): string {
   const drafts = data.posts.filter((p) => p.status === "draft");
   const posted = data.posts.filter((p) => p.status === "posted");
@@ -645,7 +652,7 @@ export function snsPage(data: {
               </form>`
             : ""
         }
-        <form method="post" action="/sns/${encodeURIComponent(post.key)}/delete" onsubmit="return confirm('この投稿案を削除しますか？');">
+        <form method="post" action="/sns/${encodeURIComponent(post.key)}/delete" data-confirm="この投稿案を削除しますか？">
           <button class="small" type="submit" style="color:var(--danger);border-color:var(--danger)">削除</button>
         </form>
       </div>
@@ -669,6 +676,7 @@ export function snsPage(data: {
               { id: "bulkPostedBtn", endpoint: "/sns/bulk-posted" },
               { id: "bulkDeleteBtn", endpoint: "/sns/bulk-delete", confirmText: "件の投稿案を削除します。よろしいですか？" },
             ],
+            nonce: data.nonce,
           })
         : ""
     }
@@ -680,6 +688,7 @@ export function snsPage(data: {
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -689,6 +698,7 @@ export function trashPage(data: {
   overdueCount?: number;
   pendingTotal?: number;
   message?: { type: "ok" | "error"; text: string };
+  nonce: string;
 }): string {
   const list =
     data.items.length === 0
@@ -706,7 +716,7 @@ export function trashPage(data: {
             <form method="post" action="/trash/${encodeURIComponent(item.key)}/restore">
               <button class="small" type="submit">元に戻す</button>
             </form>
-            <form method="post" action="/trash/${encodeURIComponent(item.key)}/purge" onsubmit="return confirm('完全に削除します。元に戻せません。よろしいですか？');">
+            <form method="post" action="/trash/${encodeURIComponent(item.key)}/purge" data-confirm="完全に削除します。元に戻せません。よろしいですか？">
               <button class="small" type="submit" style="color:var(--danger);border-color:var(--danger)">完全に削除</button>
             </form>
           </div>
@@ -728,6 +738,7 @@ export function trashPage(data: {
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -764,6 +775,7 @@ export function ordersListPage(data: {
   currentFilter?: { q: string; sort: string; dir: "asc" | "desc" };
   selectedOrder?: Order;
   message?: { type: "ok" | "error"; text: string };
+  nonce: string;
 }): string {
   const filter = data.currentFilter ?? { q: "", sort: "dueDate", dir: "asc" as const };
   const sortKey = ORDER_SORT_FIELDS[filter.sort] ? filter.sort : "dueDate";
@@ -822,7 +834,7 @@ export function ordersListPage(data: {
           <td data-label="入金"><span class="status-pill status-${esc(o.paymentStatus)}">${esc(o.paymentStatus)}</span></td>
           <td class="actions">
             <a href="${esc(selectHref(o))}" class="small" style="text-decoration:none;display:inline-block;padding:5px 14px;border:1px solid var(--accent);border-radius:999px;color:var(--accent);font-size:12px;font-weight:700">開く</a>
-            <form method="post" action="/orders/${encodeURIComponent(o.key)}/delete" onsubmit="return confirm('この受注を削除しますか？');">
+            <form method="post" action="/orders/${encodeURIComponent(o.key)}/delete" data-confirm="この受注を削除しますか？">
               <button class="small" type="submit" style="color:var(--danger);border-color:var(--danger)">削除</button>
             </form>
           </td>
@@ -842,6 +854,7 @@ export function ordersListPage(data: {
           order: data.selectedOrder,
           cancelHref: "/orders",
           formId: "detailOrderForm",
+          nonce: data.nonce,
         })}
       </div>
     `
@@ -880,7 +893,7 @@ export function ordersListPage(data: {
       </div>
       ${detailPane}
     </div>
-    <script>
+    <script nonce="${data.nonce}">
       document.querySelectorAll("table.data tbody tr[data-href]").forEach(function (tr) {
         tr.addEventListener("click", function (e) {
           if (e.target.closest("a, button, form, input")) return;
@@ -891,6 +904,7 @@ export function ordersListPage(data: {
     ${bulkActionsScript({
       selectAllId: "selectAllOrders",
       actions: [{ id: "bulkDeleteBtn", endpoint: "/orders/bulk-delete", confirmText: "件の受注を削除します。よろしいですか？" }],
+      nonce: data.nonce,
     })}
   `;
   return shell({
@@ -901,6 +915,7 @@ export function ordersListPage(data: {
     pendingTotal: data.pendingTotal,
     wide: true,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -910,6 +925,7 @@ function orderFormFields(opts: {
   prefill?: Partial<Order>;
   cancelHref: string;
   formId: string;
+  nonce: string;
 }): string {
   const o = opts.order ?? opts.prefill;
   const action = opts.order ? `/orders/${encodeURIComponent(opts.order.key)}` : "/orders";
@@ -969,7 +985,7 @@ function orderFormFields(opts: {
         <a href="${opts.cancelHref}" style="margin-left:12px;font-size:13px;color:var(--text-faint)">キャンセルして戻る</a>
       </div>
     </form>
-    <script>
+    <script nonce="${opts.nonce}">
       (function () {
         var idp = ${JSON.stringify(idp)};
         var dateRe = /^\\d{4}-\\d{2}-\\d{2}$/;
@@ -1019,6 +1035,7 @@ export function orderFormPage(data: {
   overdueCount: number;
   pendingTotal?: number;
   message?: { type: "ok" | "error"; text: string };
+  nonce: string;
 }): string {
   const isEdit = Boolean(data.order);
 
@@ -1027,7 +1044,7 @@ export function orderFormPage(data: {
       <h1>${isEdit ? "受注を編集" : "受注を新規追加"}</h1>
       <h2>LINEなど外部で受けたご依頼の情報を入力してください</h2>
       ${banner(data.message)}
-      ${orderFormFields({ order: data.order, prefill: data.prefill, cancelHref: "/orders", formId: "orderForm" })}
+      ${orderFormFields({ order: data.order, prefill: data.prefill, cancelHref: "/orders", formId: "orderForm", nonce: data.nonce })}
     </div>
   `;
   return shell({
@@ -1037,6 +1054,7 @@ export function orderFormPage(data: {
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -1095,6 +1113,7 @@ export function revenuePage(data: {
   pipelineTotal: number;
   monthly: { month: string; total: number; count: number }[];
   message?: { type: "ok" | "error"; text: string };
+  nonce: string;
 }): string {
   const rows =
     data.monthly.length === 0
@@ -1151,6 +1170,7 @@ export function revenuePage(data: {
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -1200,6 +1220,7 @@ export function analyticsPage(data: {
   unreadCount: number;
   overdueCount: number;
   pendingTotal?: number;
+  nonce: string;
 }): string {
   const { summary } = data;
 
@@ -1254,6 +1275,7 @@ export function analyticsPage(data: {
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -1263,6 +1285,7 @@ export function approvalsPage(data: SidebarCounts & {
   snsDrafts: SnsPost[];
   unpaidOrders: Order[];
   message?: { type: "ok" | "error"; text: string };
+  nonce: string;
 }): string {
   const section = (
     title: string,
@@ -1360,11 +1383,16 @@ export function approvalsPage(data: SidebarCounts & {
     pendingTotal: data.pendingTotal,
     wide: true,
     content,
+    nonce: data.nonce,
   });
 }
 
 export function activityPage(
-  data: SidebarCounts & { entries: ActivityEntry[]; message?: { type: "ok" | "error"; text: string } }
+  data: SidebarCounts & {
+    entries: ActivityEntry[];
+    message?: { type: "ok" | "error"; text: string };
+    nonce: string;
+  }
 ): string {
   const items =
     data.entries.length === 0
@@ -1394,6 +1422,7 @@ export function activityPage(
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -1403,6 +1432,7 @@ export function clientsListPage(
   data: SidebarCounts & {
     clients: { name: string; orderCount: number; inquiryCount: number; lastActivity: number }[];
     message?: { type: "ok" | "error"; text: string };
+    nonce: string;
   }
 ): string {
   const sorted = [...data.clients].sort((a, b) => b.lastActivity - a.lastActivity);
@@ -1436,6 +1466,7 @@ export function clientsListPage(
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -1445,6 +1476,7 @@ export function clientDetailPage(
     orders: Order[];
     inquiries: Inquiry[];
     message?: { type: "ok" | "error"; text: string };
+    nonce: string;
   }
 ): string {
   type Entry = { at: number; html: string };
@@ -1502,6 +1534,7 @@ export function clientDetailPage(
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -1509,6 +1542,7 @@ export function searchPage(
   data: SidebarCounts & {
     q: string;
     results: { orders: Order[]; inquiries: Inquiry[]; snsPosts: SnsPost[]; activity: ActivityEntry[] };
+    nonce: string;
   }
 ): string {
   const { q, results } = data;
@@ -1586,6 +1620,7 @@ export function searchPage(
     pendingTotal: data.pendingTotal,
     wide: true,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -1602,12 +1637,13 @@ export function printReportPage(
     snsPostedCount: number;
     monthly: { month: string; total: number; count: number }[];
     message?: { type: "ok" | "error"; text: string };
+    nonce: string;
   }
 ): string {
   const content = `
     <div class="report-page">
       <div class="report-print-bar">
-        <button class="primary" type="button" onclick="window.print()">🖨 印刷する</button>
+        <button class="primary" type="button" id="printReportBtn">🖨 印刷する</button>
       </div>
       <h1>月次経営レポート</h1>
       <h2>${esc(data.month)}時点のヨリソイワークスの状況です</h2>
@@ -1637,6 +1673,7 @@ export function printReportPage(
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }
 
@@ -1644,6 +1681,7 @@ export function settingsPage(
   data: SidebarCounts & {
     email: string;
     message?: { type: "ok" | "error"; text: string };
+    nonce: string;
   }
 ): string {
   const content = `
@@ -1699,5 +1737,6 @@ export function settingsPage(
     overdueCount: data.overdueCount,
     pendingTotal: data.pendingTotal,
     content,
+    nonce: data.nonce,
   });
 }

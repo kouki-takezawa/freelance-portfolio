@@ -46,7 +46,9 @@ export async function deleteOrder(env: { DATA: KVNamespace }, key: string): Prom
 }
 
 function csvCell(value: string | number): string {
-  const s = String(value);
+  let s = String(value);
+  // Excel/Google Sheetsが数式として評価する先頭記号を無害化する(CSVインジェクション対策)
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }

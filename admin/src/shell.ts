@@ -4,7 +4,7 @@
 import { esc, PUBLIC_SITE_URL } from "./util";
 import { baseStyle, SW_REGISTER_SCRIPT, THEME_BOOTSTRAP_SCRIPT } from "./styles";
 
-export function htmlShell(title: string, bodyInner: string): string {
+export function htmlShell(title: string, bodyInner: string, nonce: string): string {
   return `<!doctype html>
 <html lang="ja">
 <head>
@@ -20,9 +20,9 @@ export function htmlShell(title: string, bodyInner: string): string {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" />
   <style>${baseStyle}</style>
-  <script>${THEME_BOOTSTRAP_SCRIPT}</script>
+  <script nonce="${nonce}">${THEME_BOOTSTRAP_SCRIPT}</script>
 </head>
-<body>${bodyInner}<script>${SW_REGISTER_SCRIPT}</script></body>
+<body>${bodyInner}<script nonce="${nonce}">${SW_REGISTER_SCRIPT}</script></body>
 </html>`;
 }
 
@@ -140,7 +140,9 @@ export function shell(opts: {
   pendingTotal?: number;
   wide?: boolean | "full";
   content: string;
+  nonce: string;
 }): string {
+  const nonce = opts.nonce;
   const pendingTotal = opts.pendingTotal ?? 0;
   const nav = NAV_SECTIONS.map((section) => {
     const items = section.items
@@ -277,7 +279,7 @@ export function shell(opts: {
       </form>
     </div>
 
-    <script>
+    <script nonce="${nonce}">
       // モーダル(コマンドパレット・ショートカット一覧)共通のフォーカストラップ。
       // Tabで最後の要素から出たら先頭へ、Shift+Tabで先頭から出たら末尾へ戻す。
       function trapFocus(overlay, e) {
@@ -296,6 +298,19 @@ export function shell(opts: {
           first.focus();
         }
       }
+
+      // data-confirm属性を持つフォームは送信前にconfirm()で確認する
+      // (CSPでインラインonsubmit=を許可しないため、共通スクリプト側でまとめて処理する)
+      document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+        form.addEventListener("submit", function (e) {
+          if (!confirm(form.getAttribute("data-confirm"))) e.preventDefault();
+        });
+      });
+
+      (function () {
+        var printBtn = document.getElementById("printReportBtn");
+        if (printBtn) printBtn.addEventListener("click", function () { window.print(); });
+      })();
 
       (function () {
         var btn = document.getElementById("themeToggle");
@@ -828,7 +843,7 @@ export function shell(opts: {
       })();
     </script>
   `;
-  return htmlShell(opts.title, body);
+  return htmlShell(opts.title, body, nonce);
 }
 
 export function banner(message?: { type: "ok" | "error"; text: string }): string {

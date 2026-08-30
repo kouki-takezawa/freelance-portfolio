@@ -1,7 +1,10 @@
 const ADMIN_ACCOUNT_KEY = "auth:admin";
-const PBKDF2_ITERATIONS = 100000;
+const PBKDF2_ITERATIONS = 600000;
 
-export type AdminAccount = { email: string; passwordHash: string };
+// sessionEpochは、パスワード/ログインID変更のたびにインクリメントする「世代」番号。
+// 発行済みのセッションCookieにも同じ値を埋め込み、検証時に一致しなければ強制ログアウトする
+// (盗まれたCookieが変更後も残り続けるのを防ぐ)。既存レコードに無い場合は0として扱う。
+export type AdminAccount = { email: string; passwordHash: string; sessionEpoch?: number };
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -52,6 +55,7 @@ export async function getAdminAccount(env: {
   const seeded: AdminAccount = {
     email: env.ADMIN_EMAIL,
     passwordHash: await hashPassword(env.ADMIN_PASSWORD),
+    sessionEpoch: 0,
   };
   await env.DATA.put(ADMIN_ACCOUNT_KEY, JSON.stringify(seeded));
   return seeded;
@@ -91,12 +95,15 @@ async function sign(value: string, secret: string): Promise<string> {
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7日間
 
+export type SessionInfo = { email: string; epoch: number };
+
 export async function createSessionCookie(
   email: string,
-  secret: string
+  secret: string,
+  epoch: number
 ): Promise<string> {
   const exp = Date.now() + SESSION_TTL_MS;
-  const payload = `${email}|${exp}`;
+  const payload = `${email}|${exp}|${epoch}`;
   const sig = await sign(payload, secret);
   return `${btoa(payload)}.${sig}`;
 }
@@ -104,7 +111,7 @@ export async function createSessionCookie(
 export async function verifySessionCookie(
   cookieValue: string | undefined,
   secret: string
-): Promise<string | null> {
+): Promise<SessionInfo | null> {
   if (!cookieValue) return null;
   const [payloadB64, sig] = cookieValue.split(".");
   if (!payloadB64 || !sig) return null;
@@ -119,9 +126,12 @@ export async function verifySessionCookie(
   const expectedSig = await sign(payload, secret);
   if (!timingSafeEqual(expectedSig, sig)) return null;
 
-  const [email, expStr] = payload.split("|");
+  const [email, expStr, epochStr] = payload.split("|");
   const exp = Number(expStr);
   if (!email || !exp || Date.now() > exp) return null;
+  // epochStrが無い(移行前に発行された)Cookieはepoch 0として扱う
+  const epoch = epochStr === undefined ? 0 : Number(epochStr);
+  if (!Number.isFinite(epoch)) return null;
 
-  return email;
+  return { email, epoch };
 }
