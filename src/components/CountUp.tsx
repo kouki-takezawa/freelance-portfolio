@@ -49,6 +49,36 @@ export function CountUp({
   return <span ref={ref}>{text}</span>;
 }
 
+// 頻繁に変わる値(見積もりシミュレーターの合計金額など)を、直前の表示値から
+// 新しい値へなめらかに遷移させる。CountUpと違いスクロール判定はせず常時追従する。
+export function useAnimatedNumber(value: number, duration = 0.5) {
+  const [display, setDisplay] = useState(value);
+  const fromRef = useRef(value);
+
+  useEffect(() => {
+    const from = fromRef.current;
+    if (from === value) return;
+    const start = performance.now();
+    const durationMs = duration * 1000;
+    let frame: number;
+
+    function tick(now: number) {
+      const progress = Math.min((now - start) / durationMs, 1);
+      setDisplay(Math.round(from + (value - from) * easeOutExpo(progress)));
+      if (progress < 1) {
+        frame = requestAnimationFrame(tick);
+      } else {
+        fromRef.current = value;
+      }
+    }
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [value, duration]);
+
+  return display;
+}
+
 // "100,000円〜" のような文字列から数値部分だけを抽出してカウントアップさせる
 export function AnimatedPrice({ priceFrom }: { priceFrom: string }) {
   const match = priceFrom.match(/^(\D*)([\d,]+)(.*)$/);

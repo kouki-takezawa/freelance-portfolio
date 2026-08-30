@@ -10,6 +10,18 @@
   --accent-foreground: #ffffff;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0d1117;
+    --surface: #161b26;
+    --foreground: #e6e9ef;
+    --muted: #94a1b8;
+    --border: #2b3346;
+    --accent: #7fb0e0;
+    --accent-foreground: #0d1117;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);

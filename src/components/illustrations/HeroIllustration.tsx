@@ -9,8 +9,8 @@ export default function HeroIllustration() {
       {/* platform */}
       <polygon
         points="240,120 430.5,230 240,340 49.5,230"
-        fill="#EEF3F9"
-        stroke="#E4E7EC"
+        fill="var(--color-surface)"
+        stroke="var(--color-border)"
         strokeWidth="1.5"
       />
 

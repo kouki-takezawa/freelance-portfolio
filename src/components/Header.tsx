@@ -1,11 +1,33 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { siteConfig } from "@/lib/site";
 import MobileMenu from "@/components/MobileMenu";
 
 export default function Header() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 24);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4">
+    <header
+      className={`sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur transition-shadow duration-300 ${
+        scrolled ? "shadow-sm" : ""
+      }`}
+    >
+      <div
+        className={`mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 transition-[padding] duration-300 ${
+          scrolled ? "py-2.5" : "py-4"
+        }`}
+      >
         <div className="flex items-center gap-3">
           <MobileMenu />
           <Link href="/" className="text-base font-bold tracking-tight sm:text-lg">

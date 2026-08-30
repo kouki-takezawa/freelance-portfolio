@@ -6,7 +6,7 @@ export default function LineButton({ className = "" }: { className?: string }) {
       href={siteConfig.lineUrl}
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 ${className}`}
+      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:scale-[1.03] hover:opacity-90 active:scale-95 ${className}`}
       // LINE公式グリーン(#06C755)は白文字とのコントラストが2.25:1でWCAG AA未達のため、
       // 同系色のまま4.5:1以上を確保できる濃さまで落としている
       style={{ backgroundColor: "#037C36" }}
