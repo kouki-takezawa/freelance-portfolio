@@ -375,18 +375,15 @@ app.post("/logout", (c) => {
   return c.redirect("/login");
 });
 
-// 認証ゲート: いったん無効化中(2026-08-29)。再度有効化する場合は下のコメントを外す。
-// この間、ログイン画面(/login)は残っているが、未ログインでも全ルートにアクセスできる。
-// お問い合わせ・受注・売上・コンテンツ編集が誰でも閲覧・操作可能な状態なので注意。
-//
-// app.use("/*", async (c, next) => {
-//   const cookieValue = getCookie(c, COOKIE_NAME);
-//   const email = await verifySessionCookie(cookieValue, c.env.SESSION_SECRET);
-//   if (!email) {
-//     return c.redirect("/login");
-//   }
-//   await next();
-// });
+// 認証ゲート: 2026-08-30に再有効化。
+app.use("/*", async (c, next) => {
+  const cookieValue = getCookie(c, COOKIE_NAME);
+  const email = await verifySessionCookie(cookieValue, c.env.SESSION_SECRET);
+  if (!email) {
+    return c.redirect("/login");
+  }
+  await next();
+});
 
 app.get("/", async (c) => {
   try {
