@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { services } from "@/lib/services";
+import { useAnimatedNumber } from "@/components/CountUp";
 
 type ServiceType = "hp" | "lp" | "system" | "line";
 
@@ -85,6 +87,7 @@ export default function EstimateSimulator() {
       .reduce((sum, o) => sum + o.price, 0);
     return service.base + optionsTotal;
   }, [service, selected]);
+  const animatedTotal = useAnimatedNumber(total);
 
   function toggle(id: string) {
     setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -137,61 +140,72 @@ export default function EstimateSimulator() {
         </div>
       </div>
 
-      {serviceScope.length > 0 && (
-        <div className="rounded-xl border border-border bg-surface/60 p-4">
-          <p className="text-sm font-semibold">
-            基本料金({formatYen(service.base)}円〜)に含まれる内容
-          </p>
-          <ul className="mt-3 flex flex-col gap-1.5">
-            {serviceScope.map((item) => (
-              <li
-                key={item}
-                className="flex items-start gap-2 text-xs text-foreground/80 sm:text-sm"
-              >
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                {item}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-3 text-xs text-muted">
-            これを超える内容は下記のオプションを追加するか、正式なお見積り時にご相談ください。
-          </p>
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={serviceType}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col gap-8"
+        >
+          {serviceScope.length > 0 && (
+            <div className="rounded-xl border border-border bg-surface/60 p-4">
+              <p className="text-sm font-semibold">
+                基本料金({formatYen(service.base)}円〜)に含まれる内容
+              </p>
+              <ul className="mt-3 flex flex-col gap-1.5">
+                {serviceScope.map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-start gap-2 text-xs text-foreground/80 sm:text-sm"
+                  >
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-muted">
+                これを超える内容は下記のオプションを追加するか、正式なお見積り時にご相談ください。
+              </p>
+            </div>
+          )}
 
-      {service.options.length > 0 && (
-        <div>
-          <p className="text-sm font-semibold">
-            あてはまるものがあれば選んでください(複数選択可・任意)
-          </p>
-          <div className="mt-3 flex flex-col gap-2">
-            {service.options.map((option) => (
-              <label
-                key={option.id}
-                className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border px-4 py-3 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent/5"
-              >
-                <span className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={!!selected[option.id]}
-                    onChange={() => toggle(option.id)}
-                    className="h-4 w-4 accent-accent"
-                  />
-                  {option.label}
-                </span>
-                <span className="shrink-0 text-muted">
-                  +{formatYen(option.price)}円
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
+          {service.options.length > 0 && (
+            <div>
+              <p className="text-sm font-semibold">
+                あてはまるものがあれば選んでください(複数選択可・任意)
+              </p>
+              <div className="mt-3 flex flex-col gap-2">
+                {service.options.map((option) => (
+                  <label
+                    key={option.id}
+                    className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-border px-4 py-3 text-sm transition-transform has-[:checked]:border-accent has-[:checked]:bg-accent/5 active:scale-[0.99]"
+                  >
+                    <span className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={!!selected[option.id]}
+                        onChange={() => toggle(option.id)}
+                        className="h-4 w-4 accent-accent"
+                      />
+                      {option.label}
+                    </span>
+                    <span className="shrink-0 text-muted">
+                      +{formatYen(option.price)}円
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       <div className="rounded-2xl bg-surface p-6 text-center sm:p-8">
         <p className="text-sm text-muted">目安のお見積り金額</p>
         <p className="mt-2 text-3xl font-bold text-accent sm:text-4xl">
-          {formatYen(total)}円〜
+          {formatYen(animatedTotal)}円〜
         </p>
         <p className="mt-3 text-xs leading-relaxed text-muted">
           実際の金額は内容によって変動します。あくまで目安としてご利用ください。正式なお見積りは無料でご案内します。

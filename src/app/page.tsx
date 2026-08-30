@@ -113,7 +113,7 @@ const faqs = [
 export default function Home() {
   return (
     <div>
-      <section className="relative overflow-hidden bg-[radial-gradient(circle,_#e4e7ec_1px,_transparent_1px)] bg-[length:24px_24px]">
+      <section className="relative overflow-hidden bg-[radial-gradient(circle,_var(--color-border)_1px,_transparent_1px)] bg-[length:24px_24px]">
         <div
           className="blob-drift pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-accent/20 blur-3xl"
           aria-hidden="true"

@@ -5,6 +5,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileStickyCta from "@/components/MobileStickyCta";
+import ScrollProgressBar from "@/components/ScrollProgressBar";
 import { siteConfig } from "@/lib/site";
 import { getSeo } from "@/lib/seo";
 import { toSafeJsonLdString } from "@/lib/jsonLd";
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
            
           dangerouslySetInnerHTML={{ __html: toSafeJsonLdString(organizationJsonLd) }}
         />
+        <ScrollProgressBar />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
