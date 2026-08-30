@@ -18,6 +18,8 @@ npm run build     # 静的サイトを out/ に出力
 
 ## 管理者側画面 (admin/)
 
+**https://ai-company-os.yorisoi-works.workers.dev**
+
 会社を1人で運営するための「AI事業部」管理画面。単なるコンテンツ編集画面ではなく、トップページ自体が組織図になっており、お問い合わせ・受注・SNS投稿・売上・アクセス解析などを部門ごとに扱う(詳細は [admin/README.md](admin/README.md) を参照)。`admin/`ディレクトリの独立したCloudflare Workerアプリ(Hono製、Worker名は`ai-company-os`)。`admin/**`に変更があったときのみ [.github/workflows/deploy-admin.yml](.github/workflows/deploy-admin.yml) が自動デプロイする。
 
 もとはこのリポジトリの`admin/`だったが、一時的に[ai-company-os](https://github.com/kouki-takezawa/ai-company-os)という別リポジトリに切り出されていたものを、本リポジトリへ統合し直した(旧リポジトリは廃止)。
