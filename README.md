@@ -114,7 +114,7 @@ npm run build     # 静的サイトを out/ に出力
 
 ### お問い合わせ通知・返信メール(Resend)
 
-公開サイトはお問い合わせを受信するとKVに保存し、`RESEND_API_KEY`が設定されていれば所有者(`takechin001031@icloud.com`)宛に通知メールを送信する。管理画面からの返信も同じくResend経由。
+公開サイトはお問い合わせを受信するとKVに保存し、`RESEND_API_KEY`が設定されていれば所有者(`130967349+kouki-takezawa@users.noreply.github.com`)宛に通知メールを送信する。管理画面からの返信も同じくResend経由。
 
 - [Resend](https://resend.com)でアカウントを作成し、APIキーを発行する
 - 公開サイト用・管理画面用の両方のWorkerにシークレットを設定する

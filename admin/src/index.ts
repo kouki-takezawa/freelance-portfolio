@@ -74,7 +74,7 @@ type Bindings = {
 
 // Resendのサンドボックス送信元(独自ドメイン未検証のため)
 const NOTIFY_FROM = "ヨリソイワークス <onboarding@resend.dev>";
-const OWNER_EMAIL = "takechin001031@icloud.com";
+const OWNER_EMAIL = "130967349+kouki-takezawa@users.noreply.github.com";
 
 async function sendReplyEmail(
   env: Bindings,

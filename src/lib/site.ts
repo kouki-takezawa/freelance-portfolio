@@ -6,7 +6,7 @@ export const siteConfig = {
   tagline: "小さな会社・個人事業主のためのHP・LP・業務システム・LINE公式アカウント構築",
   description:
     "HP制作、LP制作、Webアプリ・業務システムの開発、LINE公式アカウント構築を、フリーランス相場より抑えた料金で行っています。栃木県を拠点にリモート対応、まずはお気軽にご相談ください。",
-  email: "takechin001031@icloud.com",
+  email: "130967349+kouki-takezawa@users.noreply.github.com",
   lineUrl: "https://lin.ee/TQSTklX",
   threadsUrl: "https://www.threads.net/@yorisou.works",
   instagramUrl: "https://www.instagram.com/yorisou.works",
